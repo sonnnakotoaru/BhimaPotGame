@@ -1,5 +1,43 @@
 /*
   prologue-text.css
+  - プロローグ専用のテキスト表示ルールをまとめたファイルです。
+  - 中学生向け: ここでプロローグの文字の位置・大きさ・色を調整できます。
+*/
+
+@import url('text.css');
+
+:root{
+  /* Prologue-specific layout overrides */
+  --prologue-text-top: 46%;
+  --prologue-line-gap: 1.2em;
+  --prologue-text-max-width: 1280px;
+  --prologue-text-left: 50%;
+  --prologue-text-right: 8%;
+  --prologue-text-bottom: auto;
+
+  /* Colors specific to prologue (override defaults if needed) */
+  --prologue-text-color: var(--text-color-default);
+  --prologue-text-outline-color: var(--text-outline-color-default);
+  --prologue-text-outline-width: var(--text-outline-width-default);
+}
+
+/* Line position helpers (use with generated-text.line-N) */
+.generated-text.line-1{ top: calc(var(--prologue-text-top) + 0 * var(--prologue-line-gap)); }
+.generated-text.line-2{ top: calc(var(--prologue-text-top) + 1 * var(--prologue-line-gap)); }
+.generated-text.line-3{ top: calc(var(--prologue-text-top) + 2 * var(--prologue-line-gap)); }
+.generated-text.line-4{ top: calc(var(--prologue-text-top) + 3 * var(--prologue-line-gap)); }
+.generated-text.line-5{ top: calc(var(--prologue-text-top) + 4 * var(--prologue-line-gap)); }
+
+/* Prologue-specific style variants */
+.prologue-style-1{ --text-color: var(--prologue-text-color); --text-outline-color: var(--prologue-text-outline-color); --text-outline-width: var(--prologue-text-outline-width); }
+.prologue-style-2{ --text-color: var(--prologue-text-color); --text-outline-color: var(--prologue-text-outline-color); --text-outline-width: var(--prologue-text-outline-width); }
+.prologue-style-3{ --text-color: var(--prologue-text-color); --text-outline-color: var(--prologue-text-outline-color); --text-outline-width: var(--prologue-text-outline-width); }
+.prologue-style-4{ --text-color: var(--prologue-text-color); --text-outline-color: var(--prologue-text-outline-color); --text-outline-width: var(--prologue-text-outline-width); }
+.prologue-style-5{ --text-color: var(--prologue-text-color); --text-outline-color: var(--prologue-text-outline-color); --text-outline-width: var(--prologue-text-outline-width); }
+
+/* prologue-text.css end */
+/*
+  prologue-text.css
   - 内部生成テキストの共通ルールとプロローグ固有の位置/スタイルを統合したスタイル
   - .generated-text 系クラスや --prologue-* 変数を提供します
 */
@@ -16,9 +54,9 @@
   --text-outline-width: 1px;    /* ふち（アウトライン）の幅（px 単位） */
 
   /* プロローグ表示位置設定（変更可能） */
-  --prologue-text-top: 36%;
+  --prologue-text-top: 46%;
   --prologue-line-gap: 1.2em;
-  --prologue-text-max-width: 920px;
+  --prologue-text-max-width: 1280px;
   --prologue-text-left: 50%;
   --prologue-text-right: 8%;
   --prologue-text-bottom: auto;

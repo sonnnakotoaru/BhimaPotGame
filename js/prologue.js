@@ -1,3 +1,9 @@
+;/*
+  prologue.js
+  - プロローグ画面の「動き」全般を扱うファイルです。
+  - ここでは画面のフェードイン、ボタンで次へ進む処理、効果音の再生などを行います。
+  - 中学生向けに: 「ボタンを押したら効果音を鳴らして次の画面に行く」処理をまとめています。
+*/
 ;(function(){
   'use strict'
 
@@ -5,7 +11,7 @@
   const btnNext = document.getElementById('btn-next')
   const se = document.getElementById('se-button')
 
-  // Fade in screen on load
+  // ページが読み込まれたら画面をフェードインします（ふわっと現れる）
   window.addEventListener('load', ()=>{
     if(screen){
       screen.style.transition = 'opacity 400ms'

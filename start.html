@@ -3,10 +3,17 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Start</title>
+  <title>ビーマの壺</title>
     <!-- テンプレート共通 CSS を利用 -->
   <link rel="stylesheet" href="css/scene.css">
+  <link rel="stylesheet" href="css/text.css">
     <link rel="stylesheet" href="css/start.css">
+  <!--
+    このファイル: start.html
+    - ゲームのタイトル画面（はじめる / おわる / クレジット など）を表示します。
+    - 読み込み順（重要）: js/scene.js → js/text.js → js/start.js
+    - 中学生向けメモ: BGM を鳴らす要素や、ボタンで別ページへ行く処理があります。
+  -->
   <link rel="icon" href="assets/ui_button/base/01_ui_btn_next_normal.png" type="image/png">
   </head>
   <body>
@@ -54,7 +61,8 @@
     </div>
 
     <!-- シーン専用スクリプト -->
-  <script src="js/scene-template.js"></script>
-  <script src="js/start.js"></script>
+    <script src="js/scene.js"></script>
+    <script src="js/text.js"></script>
+    <script src="js/start.js"></script>
   </body>
 </html>

@@ -5,7 +5,7 @@ This project includes a lightweight internal text renderer exposed as `TextRende
 Example:
 
 ```html
-<script src="js/scene-template.js"></script>
+<script src="js/scene.js"></script>
 <script src="js/text-renderer.js"></script>
 <script>
   // create a generated text instance

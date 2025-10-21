@@ -14,13 +14,13 @@
 - `.github/copilot-coding-rules.md` — Copilot や開発者向けのコーディングルール（1280x720 固定、ドット絵保持、フィルター禁止等）。
 - `templates/scene-template.html` — コメント付きシーンテンプレート（利用手順を記載）。
 - `css/scene-template.css` — テンプレート用の共通 CSS（pixelated 指定、ボタン挙動、opacity フェード）。
-- `js/scene-template.js` — テンプレート用の共通スクリプト（フェード、音声再生、遷移）。
+- `js/scene.js` — テンプレート用の共通スクリプト（フェード、音声再生、遷移）。
 - `docs/change_log_2025-10-21.md` — 本ファイル。
 
 ## 変更済みファイル
 - `index.html` — テンプレート仕様に合わせて構造を整理（`#screen`, `.bg`, `.scene-layer`, `#btn-susumu` 等）。
 - `js/notice.js` — 日本語の詳細コメントを追加し、audio ID を `se-button` に合わせる等の整備を実施。
-- `css/scene-template.css`, `js/scene-template.js`, `templates/scene-template.html` にヘッダーコメントを追加。
+- `css/scene-template.css`, `js/scene.js`, `templates/scene-template.html` にヘッダーコメントを追加。
 
 ## 実施理由・目的
 - プロジェクト全体で「ドット絵の質感を潰さない静的表示」を最優先にするため、コーディングルールを明示して Copilot 等の自動補完が守るべき制約を提示しました。

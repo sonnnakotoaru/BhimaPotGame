@@ -1,3 +1,8 @@
+/**
+ * credit.js
+ * - クレジット画面専用のスクリプトです。
+ * - 中学生向け: 「もどる」ボタンでタイトルに戻る処理などを持っています。
+ */
 ;(function(){
   'use strict'
   const screen = document.getElementById('screen')

@@ -1,13 +1,16 @@
 /*
 	style.css
-	- 全体のレイアウトや notice 用の基本スタイルをまとめたファイル
+	- サイト全体の基本スタイルをまとめたファイルです。
+	- 中学生向け: 画面の大きさ(1280x720)や背景、ボタンの見た目など、全体のルールをここで決めています。
 */
 /* ========== 画面の基本設定（共通） ========== */
 /* no CSS filter variables defined */
+html,body{height:100%;}
 body{margin:0;background:#000;overflow:hidden;height:100vh;display:flex;justify-content:center;align-items:center}
 
 /* ゲーム画面の大きさを決める箱 */
-#screen{position:relative;width:1280px;height:720px;opacity:0;background:#000;transition:opacity .4s ease-in}
+/* ゲーム画面の大きさを決める箱 */
+#screen{position:relative;width:1280px;height:720px;opacity:0;background:#000;transition:opacity .4s ease-in;transform-origin:center center}
 #screen.visible{opacity:1}
 
 /* 背景や文字をぴったり重ねる */

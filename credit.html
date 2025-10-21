@@ -3,12 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>クレジット</title>
+  <title>ビーマの壺</title>
   <link rel="stylesheet" href="css/scene.css">
+  <link rel="stylesheet" href="css/text.css">
   <link rel="stylesheet" href="css/credit.css">
   <link rel="icon" href="assets/ui_button/base/01_ui_btn_next_normal.png" type="image/png">
 </head>
 <body>
+  <!--
+    このファイル: credit.html
+    - クレジット（制作者や素材元の表記）を表示するページです。
+    - 読み込み順: js/scene.js → js/text.js → js/credit.js
+    - 中学生向けメモ: ここでは通常ボタンを押すと前の画面へ戻ります。
+  -->
   <div id="screen" class="fade-target">
     <div class="bg" style="background-image: url('assets/bg/01_bg_wayang_normal.png');" aria-hidden="true"></div>
 
@@ -28,7 +35,8 @@
     <!-- BGM は start.html で鳴っているため、この画面では JS 側で停止する -->
   </div>
 
-  <script src="js/scene-template.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/text.js"></script>
   <script src="js/credit.js"></script>
 </body>
 </html>

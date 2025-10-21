@@ -3,11 +3,19 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Prologue</title>
+  <title>ビーマの壺</title>
   <link rel="stylesheet" href="css/scene.css">
-    <link rel="stylesheet" href="css/prologue.css">
+  <link rel="stylesheet" href="css/text.css">
+  <link rel="stylesheet" href="css/prologue.css">
+  <link rel="stylesheet" href="css/prologue-text.css">
   </head>
   <body>
+    <!--
+      このファイル: prologue.html
+      - 物語の導入（プロローグ）を見せるページです。
+      - 読み込み順（重要）: head に CSS、body 終わりで js/scene.js → js/text.js → js/prologue-text.js → js/prologue.js
+      - 中学生向けメモ: 画面の文字は PrologueText.start() によって順に表示されます。
+    -->
     <div id="screen" class="fade-target">
       <div class="bg prologue-bg" aria-hidden="true"></div>
 
@@ -23,10 +31,9 @@
 
     </div>
 
-  <script src="js/scene-template.js"></script>
-  <link rel="stylesheet" href="css/prologue-text.css">
-    <script src="js/internal-text-runtime.js"></script>
-    <script src="js/example-internal-text-usage.js"></script>
-    <script src="js/prologue.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/text.js"></script>
+  <script src="js/prologue-text.js"></script>
+  <script src="js/prologue.js"></script>
   </body>
 </html>

@@ -8,9 +8,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>注意事項（背景表示）</title>
+  <title>ビーマの壺</title>
+  <!--
+    このファイル: index.html
+    - ここは注意画面や小さな説明を出すためのページです。
+    - 読み込み順（大事）:
+      1) head: css/scene.css と css/text.css を読み込む
+      2) body 終わりで: js/scene.js → js/text.js → js/index.js の順で読み込む
+    - 中学生向けメモ: ボタン（#btn-susumu）を押すと次へ進む動きになります。
+  -->
   <link rel="stylesheet" href="css/scene.css" />
-  < 小さなアイコンを favicon として指定しておく（ブラウザの /favicon.ico 参照を避ける） -->
+  <link rel="stylesheet" href="css/text.css" />
+  <!-- 小さなアイコンを favicon として指定しておく（ブラウザの /favicon.ico 参照を避ける） -->
   <link rel="icon" href="assets/ui_button/base/01_ui_btn_next_normal.png" type="image/png">
   <!-- ページ固有のボタン位置: 下の変数を編集して調整してください -->
   <style>
@@ -40,7 +49,8 @@
   </div>
 
   <!-- テンプレート用スクリプト -->
-  <script src="js/scene-template.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/text.js"></script>
   <script src="js/index.js"></script>
 </body>
 </html>

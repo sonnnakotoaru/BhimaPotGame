@@ -1,6 +1,7 @@
 /*
   scene.css
-  - 共通シーンスタイル: 1280x720 固定画面、ピクセル描画、opacity フェードなどのルールを提供
+  - 各シーンで使う共通の見た目ルールをまとめたファイルです。
+  - 中学生向け: 画面サイズやフェード、ボタンの共通ルールなどをここで決めます。
 */
 
 :root{font-family:'KaisotaiNext','Noto Sans JP','MS PGothic',sans-serif;font-size:40px}

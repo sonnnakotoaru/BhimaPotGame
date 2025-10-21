@@ -1,7 +1,7 @@
 /**
  * index.js
- *
- * - このスクリプトは注意事項ページの簡易制御を行います。（notice.js のコピー）
+ * - 注意画面（index.html）で使う簡単な動きをまとめたファイルです。
+ * - 中学生向け: 「注意を読んだら次へ進む」ボタンを押すと start.html に移動します。
  */
 
 window.addEventListener('load', () => {
