@@ -1,12 +1,46 @@
 <!DOCTYPE html>
+<!--
+  index.html
+  - このファイルは BhimaPotGame のシーンテンプレートに準拠しています。
+  - 固定 1280x720、ドット絵は原寸表示、フェードは opacity のみで行います。
+-->
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ビーマの壺：テストページ</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>注意事項（背景表示）</title>
+  <link rel="stylesheet" href="css/scene.css" />
+  < 小さなアイコンを favicon として指定しておく（ブラウザの /favicon.ico 参照を避ける） -->
+  <link rel="icon" href="assets/ui_button/base/01_ui_btn_next_normal.png" type="image/png">
+  <!-- ページ固有のボタン位置: 下の変数を編集して調整してください -->
+  <style>
+    :root{
+      --btn-susumu-left: 1020px; /* 右方向に大きい値 */
+      --btn-susumu-top: 600px;   /* 下方向に大きい値 */
+    }
+  </style>
 </head>
-<body style="background-color: #111; color: #f5c542; text-align: center; font-family: sans-serif;">
-  <h1>ビーマの壺：秘密のドゥリーヨダナ育成ゲーム</h1>
-  <p>Hello World! GitHub Pages のテスト表示です。</p>
+<body>
+  <!-- 起動時は背景のみ表示（中央に固定サイズ 1280x720） -->
+  <div id="screen" class="fade-target">
+    <!-- 背景: assets/ 以下の原寸画像を参照 -->
+    <div class="bg" style="background-image: url('assets/bg/01_bg_wayang_normal.png');" aria-hidden="true"></div>
+
+    <!-- シーンレイヤー: 画像は原寸で重ねる -->
+    <div class="scene-layer" role="dialog" aria-labelledby="notice-title">
+      <img id="scene-title" src="assets/ui_text/notice/01_ui_notice_text_title.png" alt="注意事項タイトル" />
+      <img id="scene-body" src="assets/ui_text/notice/02_ui_notice_text_body_full.png" alt="注意事項本文" />
+
+      <!-- ボタン（原寸）: CSS の left/top で位置を調整してください -->
+      <img id="btn-susumu" class="btn-ui" src="assets/ui_button/base/01_ui_btn_next_normal.png" alt="すすむボタン" />
+    </div>
+
+      <!-- 効果音（preload 推奨）：ID はテンプレートと合わせる -->
+      <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
+  </div>
+
+  <!-- テンプレート用スクリプト -->
+  <script src="js/scene-template.js"></script>
+  <script src="js/index.js"></script>
 </body>
 </html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Prologue</title>
+  <link rel="stylesheet" href="css/scene.css">
+    <link rel="stylesheet" href="css/prologue.css">
+  </head>
+  <body>
+    <div id="screen" class="fade-target">
+      <div class="bg prologue-bg" aria-hidden="true"></div>
+
+      <!-- vessel removed: not needed in prologue -->
+
+      <!-- next button -->
+      <div class="scene-layer">
+        <img id="btn-next" class="btn-ui" src="assets/ui_button/base/01_ui_btn_next_normal.png" alt="すすむ" />
+      </div>
+
+      <!-- BGM/SE passthrough (assume start.html played BGM and it may continue) -->
+      <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
+
+    </div>
+
+  <script src="js/scene-template.js"></script>
+  <link rel="stylesheet" href="css/prologue-text.css">
+    <script src="js/internal-text-runtime.js"></script>
+    <script src="js/example-internal-text-usage.js"></script>
+    <script src="js/prologue.js"></script>
+  </body>
+</html>

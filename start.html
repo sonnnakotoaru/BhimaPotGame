@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Start</title>
+    <!-- テンプレート共通 CSS を利用 -->
+  <link rel="stylesheet" href="css/scene.css">
+    <link rel="stylesheet" href="css/start.css">
+  <link rel="icon" href="assets/ui_button/base/01_ui_btn_next_normal.png" type="image/png">
+  </head>
+  <body>
+    <!-- start シーン: レイヤ順に注意 -->
+    <div id="screen" class="fade-target">
+
+      <!-- 背景 -->
+      <div class="bg" style="background-image: url('assets/bg/01_bg_wayang_normal.png');" aria-hidden="true"></div>
+
+      <!-- 灯り（複数フレームでゆらぎ表現） -->
+      <div class="scene-layer" aria-hidden="true">
+        <img id="light-frame" src="assets/light/01_light_weak.png" alt="灯り" />
+      </div>
+
+      <!-- ドゥリーヨダナ（ワヤン）：3フレームで上下ゆれ。目は閉じた画像を使う -->
+      <div class="scene-layer" aria-hidden="true">
+        <img id="duryodhana-frame" src="assets/character/wayang/01_duryodhana_wayang_top.png" alt="ドゥリーヨダナ" />
+        <img id="duryodhana-eye" src="assets/character/wayang/07_duryodhana_wayang_eye_closed.png" alt="目" />
+      </div>
+
+      <!-- 壺（透過） -->
+      <div class="scene-layer" aria-hidden="true">
+        <img id="vessel" src="assets/vessel/02_vessel_base_transparent.png" alt="壺" />
+      </div>
+
+      <!-- UI テキスト（タイトル） -->
+      <div class="scene-layer">
+        <img id="ui-title" src="assets/ui_text/start/01_ui_start_text_title.png" alt="タイトル" />
+      </div>
+
+      <!-- ボタン群（原寸、座標は CSS で調整） -->
+      <div class="scene-layer">
+  <img id="btn-begin" class="btn-ui" src="assets/ui_button/start/01_ui_start_btn_begin_normal.png" alt="はじめる" />
+  <img id="btn-exit" class="btn-ui" src="assets/ui_button/start/03_ui_start_btn_exit_normal.png" alt="おわる" />
+  <img id="btn-credit" class="btn-ui" src="assets/ui_button/start/05_ui_start_btn_credit_normal.png" alt="クレジット" />
+      </div>
+
+  <!-- BGM とボタン効果音（preload） -->
+  <audio id="bgm" src="assets/sound/bgm/bgm_start.mp3" preload="auto" loop></audio>
+  <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
+
+  <!-- 音声有効化オーバーレイ（自動再生がブロックされたときに表示） -->
+  <div id="sound-overlay" class="sound-overlay" aria-hidden="true" style="display:none">画面をタップして音声を有効にする</div>
+
+    </div>
+
+    <!-- シーン専用スクリプト -->
+  <script src="js/scene-template.js"></script>
+  <script src="js/start.js"></script>
+  </body>
+</html>

@@ -1,0 +1,92 @@
+/*
+  scene.css
+  - 共通シーンスタイル: 1280x720 固定画面、ピクセル描画、opacity フェードなどのルールを提供
+*/
+
+:root{font-family:'KaisotaiNext','Noto Sans JP','MS PGothic',sans-serif;font-size:40px}
+
+/* 内部生成テキスト用フォント登録 */
+@font-face{
+  font-family: 'KaisotaiNext';
+  src: url('../assets/font/Kaisotai-Next-UP-B.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 生成テキストのベーススタイル
+   - 各要素は絶対配置で配置位置は left/top で制御
+   - ドット絵ルールに合わせ、フィルタ等は使わず、等倍で綺麗に描画する
+*/
+.generated-text{
+  position:absolute;
+  left:0; top:0;
+  font-family: 'KaisotaiNext', 'Noto Sans JP', sans-serif;
+  font-size:40px; /* デフォルト、スクリプトで上書き可 */
+  line-height:1.0;
+  white-space:pre-wrap;
+  -webkit-font-smoothing: none;
+  image-rendering:pixelated;
+  /* アウトラインは text-stroke（webkit）と text-shadow の両方でフォールバック */
+  -webkit-text-stroke: 1px transparent;
+  text-shadow: none;
+  pointer-events:auto; /* クリックトリガーを有効化できるように */
+  z-index: 50;
+}
+
+/* small utility when outline requested */
+.generated-text.outlined{-webkit-text-stroke-width:1px}
+
+html,body{height:100%;margin:0;background:#000;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center}
+
+/* ゲーム画面箱（固定サイズ） */
+#screen{position:relative;width:1280px;height:720px;box-sizing:border-box;opacity:0;--transition-duration:400ms;transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1)}
+#screen.visible{opacity:1}
+
+/* 背景要素（原寸表示） */
+.bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-repeat:no-repeat;background-position:center center;background-size:1280px 720px;z-index:0}
+
+/* シーン用レイヤー：UI などを配置する */
+.scene-layer{position:absolute;left:0;top:0;width:1280px;height:720px;z-index:1;pointer-events:none}
+
+/* 画像はすべて原寸で表示（等倍）、pointer-events は必要な要素のみ有効に */
+.scene-layer img{position:absolute;top:0;left:0;width:auto;height:auto;image-rendering:pixelated;image-rendering:crisp-edges;-ms-interpolation-mode:nearest-neighbor}
+
+/* ボタン共通設定: 等倍表示 + カーソル + 押下時の明度上昇 */
+.btn-ui{pointer-events:auto;cursor:pointer}
+.btn-ui:active{filter:brightness(1.5)}
+
+/* Start シーン用ボタンの初期座標は CSS 変数で上書き可能にする */
+:root{
+  --btn-begin-left: 880px;
+  --btn-begin-top: 520px;
+  --btn-exit-left: 880px;
+  --btn-exit-top: 600px;
+  --btn-credit-left: 880px;
+  --btn-credit-top: 680px;
+}
+
+/* 個別ボタンの配置（必要に応じて HTML やページ固有 CSS で上書きしてください） */
+#btn-begin{left:var(--btn-begin-left);top:var(--btn-begin-top);}
+#btn-exit{left:var(--btn-exit-left);top:var(--btn-exit-top);}
+#btn-credit{left:var(--btn-credit-left);top:var(--btn-credit-top);}
+
+/* notice screen next button vars (index.html can override these) */
+:root{
+  --btn-susumu-left: 1020px;
+  --btn-susumu-top: 600px;
+}
+
+#btn-susumu{pointer-events:auto;left:var(--btn-susumu-left);top:var(--btn-susumu-top);cursor:pointer}
+#btn-susumu:active{filter:brightness(1.5)}
+
+/* フェードは opacity のみで実装（黒レイヤー等は禁止） */
+
+/* 音声有効化オーバーレイ */
+.sound-overlay{position:absolute;left:0;top:0;width:1280px;height:720px;display:flex;align-items:center;justify-content:center;z-index:10;color:#fff;background:rgba(0,0,0,0.45);font-size:28px}
+
+/* 軽量な遷移中ブロッカー: 遷移中にポインタイベントを遮断するために利用 */
+.transition-blocker{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:9999;display:none;pointer-events:none}
+.transition-blocker.active{display:block;pointer-events:auto}
+.transition-blocker .hit{width:100%;height:100%}

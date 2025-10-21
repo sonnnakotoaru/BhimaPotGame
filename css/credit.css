@@ -1,0 +1,9 @@
+/*
+  credit.css
+  - クレジット画面用の配置変数を定義します
+*/
+:root{
+  --btn-back-left: 1040px;
+  --btn-back-top: 600px;
+}
+#btn-back{ left: var(--btn-back-left); top: var(--btn-back-top); }

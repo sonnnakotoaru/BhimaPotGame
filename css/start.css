@@ -1,0 +1,12 @@
+/*
+  start.css
+  - スタート画面専用のボタン位置等の変数を定義します
+*/
+:root{
+  --btn-begin-left: 930px;
+  --btn-begin-top: 300px;
+  --btn-exit-left: 930px;
+  --btn-exit-top: 420px;
+  --btn-credit-left: 930px;
+  --btn-credit-top: 540px;
+}

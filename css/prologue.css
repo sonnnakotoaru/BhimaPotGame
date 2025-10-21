@@ -1,0 +1,11 @@
+/*
+  prologue.css
+  - プロローグ専用のレイアウト変数と背景・ボタン位置を定義します
+*/
+:root{
+  --btn-next-left: 980px;
+  --btn-next-top: 560px;
+}
+.prologue-bg { background-image: url('../assets/bg/01_bg_wayang_normal.png');
+  position:absolute; left:0; top:0; width:1280px; height:720px; background-repeat:no-repeat; background-position:center center; background-size:1280px 720px; z-index:0 }
+#btn-next{ position:absolute; left: var(--btn-next-left); top: var(--btn-next-top); z-index:20; pointer-events:auto; display:block }

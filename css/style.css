@@ -1,0 +1,35 @@
+/*
+	style.css
+	- 全体のレイアウトや notice 用の基本スタイルをまとめたファイル
+*/
+/* ========== 画面の基本設定（共通） ========== */
+/* no CSS filter variables defined */
+body{margin:0;background:#000;overflow:hidden;height:100vh;display:flex;justify-content:center;align-items:center}
+
+/* ゲーム画面の大きさを決める箱 */
+#screen{position:relative;width:1280px;height:720px;opacity:0;background:#000;transition:opacity .4s ease-in}
+#screen.visible{opacity:1}
+
+/* 背景や文字をぴったり重ねる */
+.full{position:absolute;inset:0;width:100%;height:100%}
+
+/* 背景画像をゲーム画面サイズで表示 */
+.bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-position:center center;background-repeat:no-repeat;background-size:1280px 720px;z-index:0}
+
+/* notice-panel should sit above the background */
+.notice-panel{position:absolute;inset:0;width:1280px;height:720px;padding:0;box-sizing:border-box;background:rgba(22,14,8,.72);color:#F7E3A8;font-family:'Noto Sans JP','MS PGothic',sans-serif;z-index:1}
+
+/* 全体フィルター（ここを変えれば全画面の明るさ等を調整できます） */
+/* .screen-filter intentionally left without filter rules */
+
+/* 「すすむ」ボタン */
+#btn,#btn-susumu{position:absolute;width:196px;height:64px;left:500px;top:600px;cursor:pointer}
+
+/* 押したときに光る */
+/* button active state intentionally has no filter */
+
+/* Pixel-art rendering */
+img,.bg{image-rendering:pixelated;image-rendering:crisp-edges;-ms-interpolation-mode:nearest-neighbor}
+
+/* 画像は原寸で表示 */
+#notice-title-img,#notice-body-img,img#btn-susumu{position:absolute;top:0;left:0;width:auto;height:auto}
