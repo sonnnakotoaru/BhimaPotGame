@@ -1,52 +1,104 @@
-/**
- * credit.js
- * - クレジット画面専用のスクリプトです。
- * - 中学生向け: 「もどる」ボタンでタイトルに戻る処理などを持っています。
- */
-;(function(){
+/*
+  credit.js
+  - クレジット画面のとても簡単な動きだけ書いています。
+  - 小学生向け説明:
+    1) 画面が開いたら、もし流れている音楽(BGM)があれば止めます。
+    2) 画面をふわっと見せます（フェードイン）。
+    3) 「もどる」ボタンを押すと、ボタン音を鳴らしてフェードアウトしたあとにタイトルへ戻ります。
+*/
+
+(function(){
   'use strict'
+
+  // 画面とボタンの要素を取ってくるよ
   const screen = document.getElementById('screen')
-  const se = document.getElementById('se-button')
   const btnBack = document.getElementById('btn-back')
-  const bgm = document.getElementById('bgm') // start から継続している場合は停止する
+  const se = document.getElementById('se-button')
 
-  // フェードイン
-  window.addEventListener('load', ()=>{
+  // BGM を止める（他のページで鳴っている音楽があれば止める）
+  function stopBgm(){
     try{
-  if(screen){ screen.style.transition = 'opacity 400ms'; requestAnimationFrame(()=>{ screen.style.opacity = 1 }) }
-    }catch(e){ console.warn('fadein error', e) }
-
-    // BGM 停止はフェードイン完了（opacity の transitionend）で行う
-    if(screen){
-      const onEnd = (ev)=>{
-        if(ev.propertyName !== 'opacity') return
-        screen.removeEventListener('transitionend', onEnd)
-        try{ if(bgm){ bgm.pause(); bgm.currentTime = 0 } }catch(e){}
+      const bgm = document.getElementById('bgm')
+      if(bgm && !bgm.paused){
+        // ポーズして先頭に戻すよ
+        bgm.pause(); bgm.currentTime = 0
       }
-      screen.addEventListener('transitionend', onEnd)
-    }
-  })
-
-  function playSE(){ if(!se) return; try{ se.currentTime=0; se.play().catch(()=>{}) }catch(e){} }
-
-  function fadeOutAndGoto(url, duration=400){
-    const api = window.transitionAPI
-    if(api && api.fadeOutNavigate){
-      api.fadeOutNavigate(url, duration)
-      return
-    }
-    if(screen) screen.classList.remove('visible')
-    setTimeout(()=>{ location.href = url }, duration)
+    }catch(e){ /* 問題があっても無視して続ける */ }
   }
 
-  if(btnBack){
-    btnBack.addEventListener('pointerdown', ()=>{ try{ playSE() }catch(e){} })
-    btnBack.addEventListener('click', (e)=>{ e.preventDefault(); fadeOutAndGoto('start.html', 400) })
+  // 効果音を鳴らすよ（連打しても壊れないよう優しく扱う）
+  function playSE(){
+    if(!se) return
+    try{ se.currentTime = 0; se.play().catch(()=>{}) }catch(e){}
   }
 
-  // 画像ロードエラーの簡易ログ
-  document.querySelectorAll('#credit-title,#credit-body,#btn-back').forEach(el=>{
-    el.addEventListener('error', ()=>console.error('credit asset failed:', el.src))
-  })
+  // CSS 変数を安全に読み取るヘルパー
+  function getRootVar(name, fallback){
+    try{ const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fallback }catch(e){ return fallback }
+  }
 
-})()
+  function toMs(v, fallback){
+    if(!v) return fallback || 0
+    v = String(v).trim()
+    if(v.endsWith('ms')) return Math.round(parseFloat(v))
+    if(v.endsWith('s')) return Math.round(parseFloat(v) * 1000)
+    const n = parseFloat(v)
+    return Number.isFinite(n) ? Math.round(n) : (fallback || 0)
+  }
+
+  // 「もどる」ボタンを押したときの処理
+  function goBack(){
+    playSE() // ボタン音を鳴らす
+    // まず本文をフェードアウトしてから画面フェード→遷移
+    try{
+      const fadeOutStr = getRootVar('--credit-body-fade-out', '400ms')
+      const fadeOutMs = toMs(fadeOutStr, 400)
+      const creditBody = document.getElementById('credit-body')
+      if(creditBody){ creditBody.style.transition = `opacity ${fadeOutStr} ease`; creditBody.style.opacity = getRootVar('--credit-body-opacity-start', '0') }
+      // 本文が消えるのを待ってから画面全体をフェードアウト
+      setTimeout(()=>{
+        if(screen && screen.classList) screen.classList.remove('visible')
+        // 画面フェードの duration に合わせて遷移（フォールバック 400ms）
+        const screenFadeMs = toMs(getRootVar('--transition-duration','400ms'),400)
+        setTimeout(()=>{ window.location.href = 'start.html' }, screenFadeMs)
+      }, fadeOutMs + 20)
+    }catch(e){ if(screen && screen.classList) screen.classList.remove('visible'); setTimeout(()=>{ window.location.href = 'start.html' }, 400) }
+  }
+
+  // 初期表示の準備: BGM を止めてフェードインするよ
+  function start(){
+    stopBgm()
+    try{
+      if(screen && screen.classList) requestAnimationFrame(()=> setTimeout(()=> screen.classList.add('visible'), 20))
+    }catch(e){ /* ignore */ }
+
+    // credit-body をフェードインする（CSS 変数を参照）
+    try{
+      const creditBody = document.getElementById('credit-body')
+      if(creditBody){
+        const fadeInStr = getRootVar('--credit-body-fade-in','600ms')
+        const delayStr = getRootVar('--credit-body-fade-delay','120ms')
+        const startOp = getRootVar('--credit-body-opacity-start','0')
+        const endOp = getRootVar('--credit-body-opacity-end','1')
+        // 初期値とトランジションを設定してから end に持っていく
+        creditBody.style.opacity = startOp
+        creditBody.style.transition = `opacity ${fadeInStr} ease ${delayStr}`
+        requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ creditBody.style.opacity = endOp }) })
+      }
+    }catch(e){}
+
+    if(btnBack) btnBack.focus()
+  }
+
+  // ボタンがあればクリック時の動きを登録するよ
+  if(btnBack) btnBack.addEventListener('click', e=>{ e && e.preventDefault(); goBack() })
+
+  // DOM の読み込みが終わったら start を呼ぶ
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ()=> setTimeout(start, 80))
+  } else {
+    setTimeout(start, 80)
+  }
+
+})();
+

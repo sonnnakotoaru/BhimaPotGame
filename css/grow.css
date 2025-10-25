@@ -1,0 +1,169 @@
+/*
+  grow.css
+  - 小学生でも分かる説明:
+    ・育成画面（grow）の見た目とボタン位置を決めるファイルです。
+    ・ボタンの位置は1280x720を基準にpxで指定しています。変えたいときは :root の値を直してください。
+*/
+/* ページ全体のリセットと中央寄せ（画面を中央に揃えるため） */
+html,body{height:100%;margin:0;background:#000;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center}
+
+
+:root{
+  /* ボタンの左座標と上座標を px 単位で指定します */
+  --grow-btn-blood-left: 75.78125%; /* 970 / 1280 */
+  --grow-btn-blood-top: 33.3333%;   /* 240 / 720 */
+
+  --grow-btn-warm-left: 75.78125%;  /* 970 / 1280 */
+  --grow-btn-warm-top: 50%;         /* 360 / 720 */
+
+  --grow-btn-kitchen-left: 75.78125%; /* 970 / 1280 */
+  --grow-btn-kitchen-top: 66.6667%;   /* 480 / 720 */
+
+  --grow-btn-follow-left: 75.78125%; /* 970 / 1280 */
+  --grow-btn-follow-top: 66.6667%;   /* 480 / 720 */
+}
+
+/* ボタンに変数を適用するだけです。数値を変えると位置が変わります。 */
+#btn-blood{ position:absolute; left:var(--grow-btn-blood-left); top:var(--grow-btn-blood-top); }
+#btn-warm{ position:absolute; left:var(--grow-btn-warm-left); top:var(--grow-btn-warm-top); }
+#btn-kitchen{ position:absolute; left:var(--grow-btn-kitchen-left); top:var(--grow-btn-kitchen-top); }
+#btn-follow{ position:absolute; left:var(--grow-btn-follow-left); top:var(--grow-btn-follow-top); }
+
+/* busy 時（押せない時間帯）にボタンを明るくしてユーザーに示すクラス */
+.btn-locked{
+  /* 発光のみ（明るくするだけ）。影は付けない */
+  filter: brightness(1.25);
+  transition: filter 160ms ease;
+}
+
+/* 逆に押せないことを示すスタイル（オプション）: 半透明にする場合は以下を有効化 */
+/* .btn-locked { opacity: 0.9; } */
+
+/* --- 全体レイアウト（画面領域、背景、レイヤー） --- */
+/* #screen は全画面に広がり、フェード用のターゲットにも使います */
+#screen{position:relative;width:1280px;height:720px;box-sizing:border-box;opacity:0;--transition-duration:400ms;transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1);overflow:hidden;background:transparent}
+#screen.visible{opacity:1}
+
+/* 背景画像要素。.bg は必ず最背面に置き、cover で全体を覆います */
+.bg{
+  position:absolute;
+  left:0; right:0; top:0; bottom:0;
+  background-position:center center;
+  background-repeat:no-repeat;
+  background-size:cover;
+  z-index:0;
+}
+
+/* シーン要素は重ね順を持ち、ボタンなどは上に来るようにする */
+.scene-layer{
+  position:absolute;left:0;top:0;width:1280px;height:720px;z-index:1;pointer-events:none
+}
+
+/* 画像は絶対配置で置かれ、ドット補間の設定も scene.css と同じにする */
+.scene-layer img{position:absolute;top:0;left:0;width:auto;height:auto;image-rendering:pixelated}
+
+/* Dialog (ドゥリーヨダナのセリフ画像) */
+/* セリフ画像は 1280x720 のフルキャンバス画像です。
+   ここで強制的にキャンバスサイズに合わせ、
+   インラインで縮小指定されている場合でも上書きします。 */
+#grow-dialog{
+  position:absolute;
+  left:0;
+  top:0;
+  width:1280px;
+  height:720px;
+  max-width:none;
+  max-height:none;
+  object-fit:cover; /* 画像をキャンバス全体に覆わせる */
+  image-rendering:auto; /* 補間はブラウザ既定（綺麗に表示）を優先 */
+  z-index:70; /* grow.html 内の意図している重ね順に合わせる */
+  pointer-events:none; /* セリフはインタラクティブにしない */
+  display:none; /* JS で表示/非表示を切り替える */
+}
+
+/* UI ボタンはクリック可能にするため pointer-events を有効にする */
+.scene-layer .btn-ui, .btn-ui{ pointer-events:auto; cursor:pointer; }
+.btn-ui:active{filter:brightness(1.5)}
+
+/* 小さい画面向け: transform:scale() を使って #screen を縮小し、内部座標系を保つ。
+   これによりボタン等はキャンバス内に固定され、ウィンドウサイズの影響を受けにくくなります。 */
+@media (max-width: 1280px){
+  :root{
+    --screen-fit-w: calc((100vw - 20px) / 1280);
+    --screen-fit-h: calc((100vh - 20px) / 720);
+  }
+  #screen{ width:1280px; height:720px; transform: scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
+  .bg, .scene-layer{ width:1280px; height:720px }
+  .scene-layer img, .btn-ui{ max-width:none; height:auto }
+
+}
+
+/* --- shake アニメーション（ダイアログ / ゲージ 揺らしに使用） --- */
+/*
+  概要:
+  - ダイアログ（#grow-dialog）やゲージ（#gauge-karma, #gauge-vessel など）の視覚的な強調に使います。
+  - JS 側では要素に .shake を付与し、一定時間後に外す実装になっています（例: shakeElement 関数）。
+
+  調整ポイント:
+  - 強さ: keyframe 内の translate の px 値（例: -6px / 6px）を小さくすると微振動、大きくすると強い振動になります。
+  - 期間: .shake の animation-duration を短く/長くして振動の長さを調整します（現在は 0.8s）。
+  - 瞬間的な揺れ向け: .shake.short を使用すると duration を 0.45s に短縮します。
+
+  例: ゲージは小さめの振幅で短時間揺らしたい場合、.shake.short を適用すると効果的です。
+*/
+@keyframes shake {
+  /* 先頭/末尾は元の位置に戻る */
+  0%{ transform: translate(0,0) rotate(0deg); }
+  /* 左右交互に振る（角度を少し付けて揺れに力強さを出す） */
+  10%{ transform: translate(-6px,0) rotate(-3deg); }
+  20%{ transform: translate(6px,0) rotate(3deg); }
+  30%{ transform: translate(-4px,0) rotate(-2deg); }
+  40%{ transform: translate(4px,0) rotate(2deg); }
+  50%{ transform: translate(-2px,0) rotate(-1deg); }
+  60%{ transform: translate(2px,0) rotate(1deg); }
+  /* 終盤で落ち着かせる */
+  70%{ transform: translate(0,0) rotate(0deg); }
+  100%{ transform: translate(0,0) rotate(0deg); }
+}
+
+.shake{
+  animation-name: shake;
+  /* デフォルトの振動長さ。短くしたい場合は .shake.short を使う */
+  animation-duration: 0.8s;
+  animation-timing-function: cubic-bezier(.2,.8,.2,1);
+  animation-fill-mode: both; /* 発火中は transform を反映したままにする */
+  transform-origin: center center;
+  backface-visibility: hidden; /* レンダリング安定化 */
+  will-change: transform; /* ブラウザに最適化ヒントを出す */
+}
+
+/* 小さめの振動にしたい要素向けに短縮クラスを用意 */
+.shake.short{ animation-duration: 0.45s; }
+
+/* 微振動（上下左右）: ゲージなどに使う小さな揺れ */
+@keyframes shake-small {
+  0%{ transform: translate(0,0) rotate(0deg); }
+  15%{ transform: translate(0,-3px) rotate(0deg); }
+  30%{ transform: translate(3px,0) rotate(0deg); }
+  45%{ transform: translate(0,3px) rotate(0deg); }
+  60%{ transform: translate(-3px,0) rotate(0deg); }
+  80%{ transform: translate(0,-1px) rotate(0deg); }
+ 100%{ transform: translate(0,0) rotate(0deg); }
+}
+
+.shake.micro{
+  animation-name: shake-small;
+  animation-duration: 0.45s;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  will-change: transform;
+}
+
+/* 追加のヒント:
+   - ゲージ専用にさらに調整したい場合は `.shake.gauge` のような専用クラスを作り、
+     transform の振幅を小さくして duration を短くすることを推奨します。
+   - 透過や z-index によっては要素が目立ちにくいことがあるため、その場合は
+     box-shadow や filter: drop-shadow(...) を併用して強調してください。
+*/
+

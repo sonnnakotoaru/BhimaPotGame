@@ -1,39 +1,38 @@
 <!doctype html>
+<!--
+  prologue.html
+  - 小学生でも分かる説明:
+    ・これはプロローグ（はじめの説明）ページです。
+    ・画像を順番に見せて、すすむボタンで次へ進みます。
+-->
 <html lang="ja">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ビーマの壺</title>
-  <link rel="stylesheet" href="css/scene.css">
-  <link rel="stylesheet" href="css/text.css">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>プロローグ</title>
   <link rel="stylesheet" href="css/prologue.css">
-  <link rel="stylesheet" href="css/prologue-text.css">
-  </head>
-  <body>
-    <!--
-      このファイル: prologue.html
-      - 物語の導入（プロローグ）を見せるページです。
-      - 読み込み順（重要）: head に CSS、body 終わりで js/scene.js → js/text.js → js/prologue-text.js → js/prologue.js
-      - 中学生向けメモ: 画面の文字は PrologueText.start() によって順に表示されます。
-    -->
-    <div id="screen" class="fade-target">
-      <div class="bg prologue-bg" aria-hidden="true"></div>
+  <link rel="icon" href="data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==">
+</head>
+<body>
+  <div id="screen" class="fade-target">
+    <!-- 背景（いつも使うワヤンの絵） -->
+    <div class="bg" aria-hidden="true"></div>
 
-      <!-- vessel removed: not needed in prologue -->
-
-      <!-- next button -->
-      <div class="scene-layer">
-        <img id="btn-next" class="btn-ui" src="assets/ui_button/base/01_ui_btn_next_normal.png" alt="すすむ" />
-      </div>
-
-      <!-- BGM/SE passthrough (assume start.html played BGM and it may continue) -->
-      <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
-
+    <!-- UI: テキスト画像をここに表示します -->
+    <div class="scene-layer">
+      <img id="prologue-body" class="ui-prologue-body" src="assets/ui_text/prologue/01.png" alt="本文" />
     </div>
 
-  <script src="js/scene.js"></script>
-  <script src="js/text.js"></script>
-  <script src="js/prologue-text.js"></script>
+    <!-- UI: すすむボタン -->
+    <div class="scene-layer">
+      <img id="btn-next" class="btn-ui" src="assets/ui_button/base/01_ui_btn_next_normal.png" alt="すすむ" />
+    </div>
+
+    <!-- 効果音（ボタン音） -->
+    <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
+  </div>
+
   <script src="js/prologue.js"></script>
-  </body>
+</body>
 </html>
+

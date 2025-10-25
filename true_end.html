@@ -1,0 +1,30 @@
+<!doctype html>
+<!--
+  true_end.html
+  - 小学生でも分かる説明:
+    ・これは真エンドのページです。おめでとうメッセージが表示されます。
+    ・ボタンで育成に戻ることやタイトルに戻ることができます。
+-->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ビーマの壺</title>
+  <link rel="stylesheet" href="css/scene.css">
+  <link rel="icon" href="data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" type="image/gif">
+</head>
+<body>
+  <div id="screen">
+    <div class="bg" style="background-image: url('assets/bg/10_bg_trueend.png');" aria-hidden="true"></div>
+    <div class="scene-layer">
+      <h1>真エンド</h1>
+      <p>これは真の結末です。おめでとうございます。</p>
+      <p>
+        <a class="btn-ui" href="grow.html">育成に戻る</a>
+        <a class="btn-ui" href="index.html">タイトルへ</a>
+      </p>
+    </div>
+    <audio id="bgm" src="assets/sound/bgm_gameover_happyloop.mp3" preload="auto" loop></audio>
+  </div>
+</body>
+</html>

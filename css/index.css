@@ -1,0 +1,71 @@
+/*
+  index.css
+  - 小学生でも分かる説明:
+    ・このファイルはページ全体で使う色や大きさ、ボタン位置などをまとめた場所です。
+    ・1280x720 を基準にしているので、画面の見た目をそろえやすくなります。
+    ・難しい設定は少なめにして、あとから直しやすくしています。
+*/
+/* ここは『いろいろな長さや色の設定』をまとめたところです。
+  例: ボタンの位置や文字の大きさ、アニメーションの時間などを決めます。
+  変数を使うと、後でまとめて変えることができます。
+*/
+
+ /* ボタン位置を px 単位で指定する: 1280x720 を基準とします */
+:root{
+  --btn-susumu-left: 1020px; 
+  --btn-susumu-top: 600px;   
+  --transition-duration: 400ms;
+
+  /* 本文画像のフェード調整（JS から参照されます） */
+  --notice-body-fade-in: 600ms;
+  --notice-body-fade-out: 400ms;
+  --notice-body-fade-delay: 120ms;
+  --notice-body-opacity-start: 0;
+  --notice-body-opacity-end: 1;
+}
+
+/* 画面まわりのリセット: 画面を黒にして、余白を無くします。
+  そして、ゲーム画面（#screen）をページの中央に置くために body を中央揃えにします。
+*/
+html,body{height:100%;margin:0;background:#000;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center}
+
+/* #screen はゲームの『キャンバス』です。
+  幅1280×高さ720で固定して、最初は透明にしておいて
+  表示したいときに .visible を付けてフェードインさせます。
+*/
+#screen{position:relative;width:1280px;height:720px;box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1)}
+#screen.visible{opacity:1}
+
+/* 背景画像を置く場所です。いつも一番後ろに置かれます。
+  画像は1280×720の原寸で表示します。
+*/
+.bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-image: url('../assets/bg/01_bg_wayang_normal.png');background-repeat:no-repeat;background-position:center center;background-size:1280px 720px;z-index:0}
+
+/* scene-layer はキャラやボタンなどを重ねる場所です。
+  pointer-events:none にしておくと、背景の上に置かれていても
+  クリックが届きにくくなるので、ボタン要素だけ pointer-events を有効にします。
+*/
+.scene-layer{position:absolute;left:0;top:0;width:1280px;height:720px;z-index:1;pointer-events:none}
+
+.scene-layer img{position:absolute;top:0;left:0;width:auto;height:auto;image-rendering:pixelated}
+
+/* ボタンの見た目と操作の設定：クリックできるようにするよ */
+.btn-ui{pointer-events:auto;cursor:pointer}
+.btn-ui:active{filter:brightness(1.5)}
+
+/* すすむボタンの位置: 変数で位置を決めているので、簡単に動かせます */
+#btn-susumu{pointer-events:auto;left:var(--btn-susumu-left);top:var(--btn-susumu-top);cursor:pointer}
+
+
+/* 小さい画面向けの調整:
+  画面が小さいときはキャンバス全体を縮めて表示します。
+  こうするとボタンの位置がずれにくくなります。
+*/
+@media (max-width: 1280px){
+  :root{ --screen-fit-w: calc((100vw - 20px) / 1280); --screen-fit-h: calc((100vh - 20px) / 720); }
+  #screen{ width:1280px; height:720px; transform: scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
+  .bg, .scene-layer{ width:1280px; height:720px }
+  .scene-layer img, .btn-ui{ max-width:none; height:auto }
+  /* 生成テキストコンテナは削除済み */
+}

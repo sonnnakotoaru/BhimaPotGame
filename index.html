@@ -1,56 +1,49 @@
 <!DOCTYPE html>
 <!--
   index.html
-  - このファイルは BhimaPotGame のシーンテンプレートに準拠しています。
-  - 固定 1280x720、ドット絵は原寸表示、フェードは opacity のみで行います。
+  - 小学生でも分かる説明:
+    ・このファイルは「注意ページ」のテンプレートです。
+    ・1280x720 を基準にした見た目と、ボタンで次へ行く仕組みがあります。
+-->
+<!--
+  index.html (規範テンプレート)
+  - とてもシンプルな注意ページのテンプレートです。
+  - 基本は 1280x720 を基準に作っています。
+  - 余計な仕組みは入れず、ボタンで次の画面に移動するだけにします。
 -->
 <html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ビーマの壺</title>
-  <!--
-    このファイル: index.html
-    - ここは注意画面や小さな説明を出すためのページです。
-    - 読み込み順（大事）:
-      1) head: css/scene.css と css/text.css を読み込む
-      2) body 終わりで: js/scene.js → js/text.js → js/index.js の順で読み込む
-    - 中学生向けメモ: ボタン（#btn-susumu）を押すと次へ進む動きになります。
-  -->
-  <link rel="stylesheet" href="css/scene.css" />
-  <link rel="stylesheet" href="css/text.css" />
-  <!-- 小さなアイコンを favicon として指定しておく（ブラウザの /favicon.ico 参照を避ける） -->
-  <link rel="icon" href="assets/ui_button/base/01_ui_btn_next_normal.png" type="image/png">
-  <!-- ページ固有のボタン位置: 下の変数を編集して調整してください -->
-  <style>
-    :root{
-      --btn-susumu-left: 1020px; /* 右方向に大きい値 */
-      --btn-susumu-top: 600px;   /* 下方向に大きい値 */
-    }
-  </style>
-</head>
-<body>
-  <!-- 起動時は背景のみ表示（中央に固定サイズ 1280x720） -->
-  <div id="screen" class="fade-target">
-    <!-- 背景: assets/ 以下の原寸画像を参照 -->
-    <div class="bg" style="background-image: url('assets/bg/01_bg_wayang_normal.png');" aria-hidden="true"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BhimaPotGame - Notice</title>
+    <!-- スタイルは外部にまとめる -->
+    <link rel="stylesheet" href="css/index.css">
+    <!-- シンプルなファビコン -->
+    <link rel="icon" href="data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==">
+  </head>
+  <body>
+    <!-- ゲーム画面の枠（1280x720 を基準） -->
+    <div id="screen" class="fade-target">
+      <!-- 背景は .bg に CSS で指定します -->
+      <div class="bg" aria-hidden="true"></div>
 
-    <!-- シーンレイヤー: 画像は原寸で重ねる -->
-    <div class="scene-layer" role="dialog" aria-labelledby="notice-title">
-      <img id="scene-title" src="assets/ui_text/notice/01_ui_notice_text_title.png" alt="注意事項タイトル" />
-      <img id="scene-body" src="assets/ui_text/notice/02_ui_notice_text_body_full.png" alt="注意事項本文" />
+      <!-- ここにタイトルや本文、ボタンを置きます -->
+      <div class="scene-layer" role="dialog" aria-labelledby="notice-title">
+        <!-- タイトル画像（上）: 画像が無ければ非表示になります -->
+        <img id="scene-title" src="assets/ui_text/notice/01_ui_notice_text_title.png" alt="注意：タイトル" />
 
-      <!-- ボタン（原寸）: CSS の left/top で位置を調整してください -->
-      <img id="btn-susumu" class="btn-ui" src="assets/ui_button/base/01_ui_btn_next_normal.png" alt="すすむボタン" />
+        <!-- 本文画像（中央） -->
+        <img id="scene-body" src="assets/ui_text/notice/02_ui_notice_text_body_full.png" alt="注意：本文" />
+
+        <!-- すすむボタン: 押すと次（start.html）へいきます -->
+        <img id="btn-susumu" class="btn-ui" src="assets/ui_button/base/01_ui_btn_next_normal.png" alt="すすむ">
+      </div>
+
+      <!-- 効果音（ボタン用）: 読み込みを早くするため preload 推奨 -->
+      <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
     </div>
 
-      <!-- 効果音（preload 推奨）：ID はテンプレートと合わせる -->
-      <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
-  </div>
-
-  <!-- テンプレート用スクリプト -->
-  <script src="js/scene.js"></script>
-  <script src="js/text.js"></script>
-  <script src="js/index.js"></script>
-</body>
+    <!-- 動きは外部のスクリプトに任せます。中身はシンプルです。 -->
+    <script src="js/index.js"></script>
+  </body>
 </html>

@@ -1,0 +1,50 @@
+<!doctype html>
+<!--
+  distorted_end.html
+  - 小学生でも分かる説明:
+    ・ここは「歪んだ終幕」画面です。画像を順番に見せて最後にボタンで戻ります。
+    ・難しい操作はなく、ボタンを押すだけの簡単なページです。
+-->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ビーマの壺</title>
+  <link rel="stylesheet" href="css/distorted-end.css">
+  <link rel="icon" href="data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" type="image/gif">
+</head>
+<body>
+  <div id="screen" class="fade-target">
+    <!-- 背景 -->
+    <div class="bg" style="background-image: url('assets/bg/02_bg_black_transition.png');" aria-hidden="true"></div>
+
+    <!-- シーンレイヤー: キャラ画像を重ねる -->
+    <div class="scene-layer" role="dialog" aria-labelledby="distorted-title">
+      <!-- キャラ: top/mid/bottom を重ねて表示。JS で切り替える -->
+  <img id="duryodhana-frame" src="assets/character/bad_alive/01_duryodhana_bad_alive_top.png" alt="ドゥリーヨダナ" aria-hidden="true">
+
+
+  <!-- 画像版タイトル（1枚画像: タイトル+サブテキスト）。他の scene-layer 画像と同様に直接配置します -->
+  <img id="distorted-title" class="hide" src="assets/ui_text/distortedend/05.png" alt="歪んだ生存エンド（タイトル＋サブテキスト）" />
+
+      <!-- ボタン: すすむ--> 
+      <img id="btn-next" class="btn-ui" src="assets/ui_button/distortedend/01_ui_badend_distorted_btn_next_normal.png" alt="すすむボタン">
+
+    <!-- UI 本文は画像ベースに置き換え済み: JS がここに画像を入れます -->
+    <div data-ui-text-container aria-hidden="true"></div>
+
+    <!-- はじめにもどるボタン（最終表示） -->
+  <img id="btn-restart" class="btn-ui hidden" src="assets/ui_button/distortedend/03_ui_badend_distorted_btn_restart_normal.png" alt="はじめにもどる" hidden>
+
+    </div>
+
+  <!-- BGM -->
+  <!-- 効果音（テンプレートで使う ID をここでも用意） -->
+  <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
+  <audio id="bgm" src="assets/sound/bgm/bgm_badend_darknight.mp3" preload="auto" loop></audio>
+  </div>
+
+  <!-- ページ用スクリプト -->
+  <script src="js/distorted-end.js"></script>
+</body>
+</html>

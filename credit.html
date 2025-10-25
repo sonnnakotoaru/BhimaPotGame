@@ -3,40 +3,40 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ビーマの壺</title>
-  <link rel="stylesheet" href="css/scene.css">
-  <link rel="stylesheet" href="css/text.css">
+  <title>クレジット</title>
   <link rel="stylesheet" href="css/credit.css">
-  <link rel="icon" href="assets/ui_button/base/01_ui_btn_next_normal.png" type="image/png">
+  <link rel="icon" href="data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==">
 </head>
 <body>
+
   <!--
-    このファイル: credit.html
-    - クレジット（制作者や素材元の表記）を表示するページです。
-    - 読み込み順: js/scene.js → js/text.js → js/credit.js
-    - 中学生向けメモ: ここでは通常ボタンを押すと前の画面へ戻ります。
+    クレジット画面 (小学生向けコメント)
+    - これは『ゲームを作った人』や『使った素材』を紹介するページです。
+    - 画面は 1280x720 を基準に作っています。
+    - ボタンを押すとタイトル画面（start.html）にもどります。
   -->
+
   <div id="screen" class="fade-target">
-    <div class="bg" style="background-image: url('assets/bg/01_bg_wayang_normal.png');" aria-hidden="true"></div>
+    <!-- 背景: CSS の .bg で画像を指定します -->
+    <div class="bg" aria-hidden="true"></div>
 
-    <!-- UIテキストレイヤ -->
-    <div class="scene-layer" aria-hidden="true">
-      <img id="credit-title" src="assets/ui_text/credit/01_ui_credit_text_title.png" alt="クレジットタイトル" />
-      <img id="credit-body" src="assets/ui_text/credit/02_ui_credit_text_body_temp.png" alt="クレジット本文" />
-    </div>
-
-    <!-- UIボタンレイヤ -->
+    <!-- シーンの絵を置く場所 -->
     <div class="scene-layer">
-      <img id="btn-back" class="btn-ui" src="assets/ui_button/credit/01_ui_credit_btn_back_normal.png" alt="もどる" />
+      <!-- タイトルと本文の画像。1280x720 の比で位置を決めています -->
+      <img id="credit-title" class="ui-credit-title" src="assets/ui_text/credit/01_ui_credit_text_title.png" alt="クレジットタイトル">
+      <img id="credit-body" class="ui-credit-body" src="assets/ui_text/credit/02_ui_credit_text_body_temp.png" alt="クレジット本文">
     </div>
 
-    <!-- 効果音（テンプレートと同じID） -->
+    <!-- もどるボタン: 画面に合わせて大きさが変わります -->
+    <div class="scene-layer">
+      <img id="btn-back" class="btn-ui" src="assets/ui_button/credit/01_ui_credit_btn_back_normal.png" alt="もどる">
+    </div>
+
+    <!-- ボタン効果音: ボタンを押すと鳴るよ -->
     <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
-    <!-- BGM は start.html で鳴っているため、この画面では JS 側で停止する -->
   </div>
 
-  <script src="js/scene.js"></script>
-  <script src="js/text.js"></script>
+  <!-- 動きは簡単: js/credit.js に書いてあります -->
   <script src="js/credit.js"></script>
 </body>
 </html>

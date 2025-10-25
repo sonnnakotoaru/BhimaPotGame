@@ -4,17 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>ビーマの壺</title>
-    <!-- テンプレート共通 CSS を利用 -->
-  <link rel="stylesheet" href="css/scene.css">
-  <link rel="stylesheet" href="css/text.css">
-    <link rel="stylesheet" href="css/start.css">
+    <!-- ページ固有の最小 CSS のみを読み込み -->
+  <link rel="stylesheet" href="css/start.css">
   <!--
     このファイル: start.html
     - ゲームのタイトル画面（はじめる / おわる / クレジット など）を表示します。
     - 読み込み順（重要）: js/scene.js → js/text.js → js/start.js
-    - 中学生向けメモ: BGM を鳴らす要素や、ボタンで別ページへ行く処理があります。
+    - 小学生でも分かるメモ: 音（BGM）を鳴らす部分や、ボタンで別のページに行く仕組みがあります。
   -->
-  <link rel="icon" href="assets/ui_button/base/01_ui_btn_next_normal.png" type="image/png">
+  <link rel="icon" href="data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" type="image/gif">
   </head>
   <body>
     <!-- start シーン: レイヤ順に注意 -->
@@ -52,17 +50,11 @@
       </div>
 
   <!-- BGM とボタン効果音（preload） -->
-  <audio id="bgm" src="assets/sound/bgm/bgm_start.mp3" preload="auto" loop></audio>
+  <!-- 注意: ルート (index.html) が bgm を管理する場合はここに bgm を作らない -->
   <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
-
-  <!-- 音声有効化オーバーレイ（自動再生がブロックされたときに表示） -->
-  <div id="sound-overlay" class="sound-overlay" aria-hidden="true" style="display:none">画面をタップして音声を有効にする</div>
 
     </div>
 
-    <!-- シーン専用スクリプト -->
-    <script src="js/scene.js"></script>
-    <script src="js/text.js"></script>
     <script src="js/start.js"></script>
   </body>
 </html>

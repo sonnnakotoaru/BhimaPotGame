@@ -1,3 +1,10 @@
+/*
+  start.js
+  - 小学生でも分かる説明:
+    ・ここは「スタート画面（タイトル）」のためのコードです。
+    ・ボタンを押すとプロローグやクレジットへ行きます。音（BGM）を鳴らす仕組みもあります。
+    ・やさしい言葉で書いてあるので、コードを見ながら学べます。
+*/
 /**
  * start.js
  * - ここは「スタート画面（タイトル）」の動きをまとめたファイルです。
@@ -9,7 +16,22 @@
 
   // 要素キャッシュ
   const screen = document.getElementById('screen')
-  const bgm = document.getElementById('bgm')
+  // ensure bgm element exists so start.html can run standalone and BGM can be reused by router
+  function ensureBgm(){
+    let b = document.getElementById('bgm')
+    if(!b){
+      try{
+        b = document.createElement('audio')
+        b.id = 'bgm'
+        b.src = 'assets/sound/bgm/bgm_start.mp3'
+        b.preload = 'auto'
+        b.loop = true
+        document.body.appendChild(b)
+      }catch(e){ console.warn('failed to create bgm', e) }
+    }
+    return b
+  }
+  const bgm = ensureBgm()
   const se = document.getElementById('se-button')
 
   const lightImg = document.getElementById('light-frame')
@@ -36,16 +58,35 @@
   let duryIndex = 0
 
   window.addEventListener('load', () => {
+    // call the shared init so it runs both on normal load and when router injects
+    try{ if(window.startSceneInit) window.startSceneInit() }catch(e){}
+  })
+
+  // scene init function: starts animations and sets up fade-in behavior
+  function startSceneInit(){
     if (screen) {
-  screen.style.transition = 'opacity 400ms'
-      requestAnimationFrame(() => { screen.style.opacity = 1 })
+      screen.style.transition = 'opacity 400ms'
+      // Remove any inline opacity so the CSS .visible rule can take effect
+      try{ screen.style.removeProperty('opacity') }catch(e){}
+      // Use the CSS class for fade handling to keep behavior consistent with scene.css
+      requestAnimationFrame(() => { screen.classList.add('visible') })
     }
 
+    // restart animations (ensure no duplicate timers by stopping first)
+    stopAnims()
     startLightAnim()
     startDuryAnim()
 
     tryPlayBgmOnFadeIn()
-  })
+  }
+
+  // expose a known init function so router can call it after injecting scripts
+  window.startSceneInit = startSceneInit
+  // expose a stop function so router can clear intervals when swapping scenes
+  // 注意: ゲーム全体で BGM はページ遷移で停止しない設計です。
+  // そのため stop 関数はアニメ等を止めますが BGM を強制停止しません。
+  function startSceneStop(){ stopAnims() }
+  window.startSceneStop = startSceneStop
 
   function tryPlayBgmOnFadeIn(){
     if(!screen) return
@@ -53,10 +94,17 @@
       if(ev.propertyName !== 'opacity') return
       screen.removeEventListener('transitionend', onEnd)
       try{
-        if(bgm){ bgm.currentTime = 0; bgm.volume = 1.0; bgm.play().catch(()=>{
-          console.log('BGM autoplay blocked; showing overlay')
-          showSoundOverlay && showSoundOverlay()
-        }) }
+        if(bgm){
+          // If a root bgm is present and already playing, do nothing.
+          // If it's paused, try to play it without resetting currentTime to keep seamless playback.
+          bgm.volume = 1.0;
+          if(bgm.paused){
+            bgm.play().catch(()=>{
+              console.log('BGM autoplay blocked; showing overlay')
+              showSoundOverlay && showSoundOverlay()
+            })
+          }
+        }
       }catch(e){ console.warn('BGM play error on fadein:', e) }
     }
     screen.addEventListener('transitionend', onEnd)
@@ -122,8 +170,9 @@
   }
 
   window.addEventListener('beforeunload', ()=>{
+    // Do not forcibly pause bgm here. If a SPA/router is used, bgm should persist.
+    // ページアンロード時は強制停止しない（router を使って遷移すれば bgm は持続する）。
     stopAnims()
-    try{ if(bgm){ bgm.pause(); bgm.currentTime=0 } }catch(e){}
   })
 
   const soundOverlay = document.getElementById('sound-overlay')
@@ -132,7 +181,7 @@
     soundOverlay.style.display = 'flex'
     soundOverlay.setAttribute('aria-hidden','false')
     const handler = ()=>{
-      try{ if(bgm){ bgm.currentTime = 0; bgm.play().catch(()=>{}) } }catch(e){}
+      try{ if(bgm){ bgm.play().catch(()=>{}) } }catch(e){}
       soundOverlay.style.display = 'none'
       soundOverlay.setAttribute('aria-hidden','true')
       window.removeEventListener('pointerdown', handler)

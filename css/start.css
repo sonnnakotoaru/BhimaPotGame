@@ -1,13 +1,66 @@
 /*
   start.css
-  - スタート画面専用の見た目（ボタン位置など）を決めるファイルです。
-  - 中学生向け: ここを変えると「はじめる」ボタンの位置が変わります。
-:*/
+  - 小学生でも分かる説明:
+    ・ここはスタート画面（タイトル）の見た目を決めるファイルです。
+    ・ボタンの位置や文字の大きさ、フェード時間などをここでまとめています。
+*/
+ /* ボタン位置を px 単位で指定します（1280x720 基準） */
 :root{
-  --btn-begin-left: 930px;
-  --btn-begin-top: 300px;
-  --btn-exit-left: 930px;
-  --btn-exit-top: 420px;
-  --btn-credit-left: 930px;
-  --btn-credit-top: 540px;
+  --btn-begin-left: 940px;
+  --btn-begin-top: 250px; 
+  --btn-exit-left: 940px;  
+  --btn-exit-top: 380px;  
+  --btn-credit-left: 940px;
+  --btn-credit-top: 510px; 
+  --transition-duration: 400ms;
+  --text-font-family: 'KaisotaiNext', 'Noto Sans JP', sans-serif;
+  --text-font-size: 40px;
+  --text-fade-in: 0.8s;
+  --text-fade-out: 0.8s;
+}
+
+html,body{height:100%;margin:0;background:#000;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center}
+
+#screen{position:relative;width:1280px;height:720px;box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1)}
+#screen.visible{opacity:1}
+
+.bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-repeat:no-repeat;background-position:center center;background-size:1280px 720px;z-index:0}
+
+.scene-layer{position:absolute;left:0;top:0;width:1280px;height:720px;z-index:1;pointer-events:none}
+
+.scene-layer img{position:absolute;top:0;left:0;width:auto;height:auto;image-rendering:pixelated}
+
+.btn-ui{pointer-events:auto;cursor:pointer}
+.btn-ui:active{filter:brightness(1.5)}
+
+#btn-begin{left:var(--btn-begin-left);top:var(--btn-begin-top)}
+#btn-exit{left:var(--btn-exit-left);top:var(--btn-exit-top)}
+#btn-credit{left:var(--btn-credit-left);top:var(--btn-credit-top)}
+
+/* 生成テキストは削除されました。テキストUIは画像ベースへ置き換えてください。 */
+
+.hidden{ display: none !important; }
+
+/* 小さい画面向けの調整（スケーリング方式）:
+   ウィンドウが小さいときは #screen を幅/高さを直接変えるのではなく
+   transform: scale() で縮小します。これにより #screen の内部座標系
+   (1280x720) が保たれ、ボタンや絶対座標指定の要素がキャンバスに対して
+   固定されます（ウィンドウサイズに左右されない）。 */
+@media (max-width: 1280px){
+  :root{
+    --screen-fit-w: calc((100vw - 20px) / 1280);
+    --screen-fit-h: calc((100vh - 20px) / 720);
+  }
+  #screen{
+    /* 内部は常に 1280x720 を想定し、表示は scale() で縮小する */
+    width: 1280px; height: 720px;
+    transform: scale(min(var(--screen-fit-w), var(--screen-fit-h)));
+    transform-origin: center center;
+  }
+  /* レイヤーと背景は内部サイズを維持する */
+  .bg, .scene-layer{ width:1280px; height:720px; }
+  .scene-layer img, .btn-ui{ max-width:none; height:auto; }
+  /* テキストコンテナもキャンバス幅で動くようにする */
+  /* 生成テキストコンテナは不要になりました */
 }
