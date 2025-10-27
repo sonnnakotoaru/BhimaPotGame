@@ -100,65 +100,71 @@ body{display:flex;align-items:center;justify-content:center}
 }
 
 /* --- shake アニメーション（ダイアログ / ゲージ 揺らしに使用） --- */
-/*
-  概要:
-  - ダイアログ（#grow-dialog）やゲージ（#gauge-karma, #gauge-vessel など）の視覚的な強調に使います。
-  - JS 側では要素に .shake を付与し、一定時間後に外す実装になっています（例: shakeElement 関数）。
 
-  調整ポイント:
-  - 強さ: keyframe 内の translate の px 値（例: -6px / 6px）を小さくすると微振動、大きくすると強い振動になります。
-  - 期間: .shake の animation-duration を短く/長くして振動の長さを調整します（現在は 0.8s）。
-  - 瞬間的な揺れ向け: .shake.short を使用すると duration を 0.45s に短縮します。
 
-  例: ゲージは小さめの振幅で短時間揺らしたい場合、.shake.short を適用すると効果的です。
+/* ホラー的なブレ（ブラー／スキューを伴う乱れ）
+   - 振り子っぽい動きではなく、画像が揺れてブレたり歪んだりする表現を目指します。
+   - filter: blur を使って一時的に像を滲ませ、skew/rotate で不安定さを出しています。
 */
-@keyframes shake {
-  /* 先頭/末尾は元の位置に戻る */
-  0%{ transform: translate(0,0) rotate(0deg); }
-  /* 左右交互に振る（角度を少し付けて揺れに力強さを出す） */
-  10%{ transform: translate(-6px,0) rotate(-3deg); }
-  20%{ transform: translate(6px,0) rotate(3deg); }
-  30%{ transform: translate(-4px,0) rotate(-2deg); }
-  40%{ transform: translate(4px,0) rotate(2deg); }
-  50%{ transform: translate(-2px,0) rotate(-1deg); }
-  60%{ transform: translate(2px,0) rotate(1deg); }
-  /* 終盤で落ち着かせる */
-  70%{ transform: translate(0,0) rotate(0deg); }
-  100%{ transform: translate(0,0) rotate(0deg); }
+@keyframes shake-horror {
+  0%{ transform: translate(0,0) rotate(0deg) skew(0deg,0deg); filter: blur(0px) saturate(1); }
+  10%{ transform: translate(0,0) rotate(-4deg) skew(-8deg,3deg); filter: blur(2.0px) saturate(0.75); }
+  20%{ transform: translate(0,0) rotate(5deg) skew(8deg,-3deg); filter: blur(3.0px) saturate(0.5); }
+  30%{ transform: translate(0,0) rotate(-6deg) skew(-10deg,4deg); filter: blur(1.0px) saturate(0.7); }
+  45%{ transform: translate(0,0) rotate(4deg) skew(6deg,-6deg); filter: blur(2.2px) saturate(0.4); }
+  60%{ transform: translate(0,0) rotate(-3deg) skew(-4deg,3deg); filter: blur(1.8px) saturate(0.5); }
+  80%{ transform: translate(0,0) rotate(2deg) skew(2deg,-2deg); filter: blur(1.0px) saturate(1); }
+ 100%{ transform: translate(0,0) rotate(0deg) skew(0deg,0deg); filter: blur(0px) saturate(1); }
 }
 
-.shake{
-  animation-name: shake;
-  /* デフォルトの振動長さ。短くしたい場合は .shake.short を使う */
-  animation-duration: 0.8s;
-  animation-timing-function: cubic-bezier(.2,.8,.2,1);
-  animation-fill-mode: both; /* 発火中は transform を反映したままにする */
-  transform-origin: center center;
-  backface-visibility: hidden; /* レンダリング安定化 */
-  will-change: transform; /* ブラウザに最適化ヒントを出す */
-}
-
-/* 小さめの振動にしたい要素向けに短縮クラスを用意 */
-.shake.short{ animation-duration: 0.45s; }
-
-/* 微振動（上下左右）: ゲージなどに使う小さな揺れ */
-@keyframes shake-small {
-  0%{ transform: translate(0,0) rotate(0deg); }
-  15%{ transform: translate(0,-3px) rotate(0deg); }
-  30%{ transform: translate(3px,0) rotate(0deg); }
-  45%{ transform: translate(0,3px) rotate(0deg); }
-  60%{ transform: translate(-3px,0) rotate(0deg); }
-  80%{ transform: translate(0,-1px) rotate(0deg); }
- 100%{ transform: translate(0,0) rotate(0deg); }
-}
-
-.shake.micro{
-  animation-name: shake-small;
-  animation-duration: 0.45s;
-  animation-timing-function: linear;
+.shake.horror{
+  animation-name: shake-horror;
+  animation-duration: 0.5s;
+  animation-timing-function: ease-out;
   animation-fill-mode: both;
-  will-change: transform;
+  /* keyframes 内で filter を変化させるため、ここでは初期値を指定しない */
+  will-change: transform, filter;
 }
+
+/* 因果ゲージ (#gauge-karma) に対しては .shake.horror 以外の揺れを無効化する
+   - 万が一 JS 側や他の場所で .shake や .horizontal/.micro クラスが付与されても
+     ホラー表現以外は適用されないようにするための上書きルールです。
+*/
+#gauge-karma.shake:not(.horror),
+#gauge-karma.horizontal,
+#gauge-karma.micro {
+  animation: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+/* ホラー時はピクセル補間(=pixelated) を解除して filter: blur が効果的に見えるようにする */
+#gauge-karma.shake.horror,
+#gauge-karma.horror {
+  image-rendering: auto !important;
+  /* ensure filters are allowed to render smoothly */
+  -webkit-filter: none !important;
+  filter: none !important;
+}
+
+/* 因果セリフ画像 (#grow-dialog) に対しては .shake.horror 以外の揺れを無効化する */
+#grow-dialog.shake:not(.horror),
+#grow-dialog.horizontal,
+#grow-dialog.micro {
+  animation: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+/* 因果セリフがホラー揺れの時はピクセル補間を解除し、filter が効くようにする */
+#grow-dialog.shake.horror,
+#grow-dialog.horror {
+  image-rendering: auto !important;
+  will-change: transform, filter;
+  -webkit-filter: none !important;
+  filter: none !important;
+}
+
 
 /* 追加のヒント:
    - ゲージ専用にさらに調整したい場合は `.shake.gauge` のような専用クラスを作り、
