@@ -47,6 +47,8 @@ window.addEventListener('load', () => {
   // 2) 効果音を鳴らす
   // 3) フェードアウトして start.html に移動する
   async function activate() {
+    // prevent double activation
+    try{ if(btn._locked) return; btn._locked = true; setTimeout(()=>{ btn._locked = false }, 1200) }catch(e){}
     btn.classList.add('pressed')
     playSE()
 

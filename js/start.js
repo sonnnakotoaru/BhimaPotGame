@@ -65,7 +65,8 @@
   // scene init function: starts animations and sets up fade-in behavior
   function startSceneInit(){
     if (screen) {
-      screen.style.transition = 'opacity 400ms'
+      // Use a short temporary class instead of inline transition so CSS vars are not overridden
+      try{ screen.classList.add('start-fade') }catch(e){}
       // Remove any inline opacity so the CSS .visible rule can take effect
       try{ screen.style.removeProperty('opacity') }catch(e){}
       // Use the CSS class for fade handling to keep behavior consistent with scene.css
@@ -148,6 +149,7 @@
   if(btnBegin){
     btnBegin.addEventListener('click', (e)=>{
       e.preventDefault()
+      try{ if(btnBegin._locked) return; btnBegin._locked = true; setTimeout(()=>{ btnBegin._locked = false }, 1200) }catch(e){}
       try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
       fadeOutThen(()=>{ stopAnims(); location.href = 'prologue.html' })
     })
@@ -156,6 +158,7 @@
   if(btnExit){
     btnExit.addEventListener('click', (e)=>{
       e.preventDefault()
+      try{ if(btnExit._locked) return; btnExit._locked = true; setTimeout(()=>{ btnExit._locked = false }, 800) }catch(e){}
       try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
       alert('ゲームを終了するには画面を閉じて下さい')
     })
@@ -164,6 +167,7 @@
   if(btnCredit){
     btnCredit.addEventListener('click', (e)=>{
       e.preventDefault()
+      try{ if(btnCredit._locked) return; btnCredit._locked = true; setTimeout(()=>{ btnCredit._locked = false }, 1200) }catch(e){}
       try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
       fadeOutThen(()=>{ stopAnims(); location.href = 'credit.html' })
     })

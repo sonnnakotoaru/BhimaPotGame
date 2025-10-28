@@ -65,6 +65,17 @@
     }catch(e){ if(screen && screen.classList) screen.classList.remove('visible'); setTimeout(()=>{ window.location.href = 'start.html' }, 400) }
   }
 
+  // simple button-lock helper to avoid double-activation from rapid clicks
+  function lockButtons(ms){
+    try{
+      const t = typeof ms === 'number' ? ms : 600
+      if(lockButtons._locked) return false
+      lockButtons._locked = true
+      setTimeout(()=>{ lockButtons._locked = false }, t)
+      return true
+    }catch(e){ return true }
+  }
+
   // 初期表示の準備: BGM を止めてフェードインするよ
   function start(){
     stopBgm()
@@ -91,7 +102,7 @@
   }
 
   // ボタンがあればクリック時の動きを登録するよ
-  if(btnBack) btnBack.addEventListener('click', e=>{ e && e.preventDefault(); goBack() })
+  if(btnBack) btnBack.addEventListener('click', e=>{ e && e.preventDefault(); if(!lockButtons(800)) return; goBack() })
 
   // DOM の読み込みが終わったら start を呼ぶ
   if(document.readyState === 'loading'){

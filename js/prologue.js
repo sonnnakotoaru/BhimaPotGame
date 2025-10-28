@@ -28,6 +28,17 @@
 
 	let idx = 0 // 今どの画像を見ているか
 
+	// simple button-lock helper to avoid double-activation from rapid clicks
+	function lockButtons(ms){
+		try{
+			const t = typeof ms === 'number' ? ms : 600
+			if(lockButtons._locked) return false
+			lockButtons._locked = true
+			setTimeout(()=>{ lockButtons._locked = false }, t)
+			return true
+		}catch(e){ return true }
+	}
+
 	// ボタン音を鳴らす（無ければ何もしない）
 	function playSE(){ if(!se) return; try{ se.currentTime = 0; se.play().catch(()=>{}) }catch(e){} }
 
@@ -124,7 +135,7 @@
 	}
 
 	// ボタンに処理を付ける
-	if(btnNext) btnNext.addEventListener('click', e=>{ e.preventDefault(); next() })
+	if(btnNext) btnNext.addEventListener('click', e=>{ e && e.preventDefault(); if(!lockButtons(700)) return; next() })
 
 	// DOM 準備ができたら start を走らせる
 	if(document.readyState === 'loading'){

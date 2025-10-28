@@ -70,6 +70,17 @@
     }catch(e){ return 0 }
   }
 
+  // simple button-lock helper to avoid double-activation from rapid clicks
+  function lockButtons(ms){
+    try{
+      const t = typeof ms === 'number' ? ms : 600
+      if(lockButtons._locked) return false
+      lockButtons._locked = true
+      setTimeout(()=>{ lockButtons._locked = false }, t)
+      return true
+    }catch(e){ return true }
+  }
+
   // 本文画像を表示する。distorted のパターンに合わせる。
   function showImage(i){
     container = container || document.querySelector('[data-ui-text-container]')
@@ -158,8 +169,8 @@
     idx = 0
     showImage(idx)
 
-    if(btnNext){ btnNext._bve_handler = ()=>{ playSE(); next() }; btnNext.addEventListener('click', btnNext._bve_handler) }
-    if(btnRestart){ btnRestart._bve_handler = ()=>{ if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { location.href = 'start.html' } }; btnRestart.addEventListener('click', btnRestart._bve_handler) }
+  if(btnNext){ btnNext._bve_handler = ()=>{ if(!lockButtons(600)) return; playSE(); next() }; btnNext.addEventListener('click', btnNext._bve_handler) }
+  if(btnRestart){ btnRestart._bve_handler = ()=>{ if(!lockButtons(800)) return; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { location.href = 'start.html' } }; btnRestart.addEventListener('click', btnRestart._bve_handler) }
 
     const screen = document.getElementById('screen'); if(screen) screen.classList.add('visible')
   }

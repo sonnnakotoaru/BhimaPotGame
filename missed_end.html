@@ -1,30 +1,51 @@
 <!doctype html>
-<!--
-  missed_end.html
-  - 小学生でも分かる説明:
-    ・魔力や体温が足りなかったときに出る「見逃しエンド」ページです。
-    ・ここから育成に戻って、もう一度チャレンジできます。
--->
 <html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ビーマの壺</title>
-  <link rel="stylesheet" href="css/scene.css">
-  <link rel="icon" href="data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" type="image/gif">
+  <title>見落としエンド</title>
+  <link rel="stylesheet" href="css/missed_end.css">
+  <link rel="icon" href="data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==">
 </head>
 <body>
-  <div id="screen">
-    <div class="bg" style="background-image: url('assets/bg/02_bg_black_transition.png');" aria-hidden="true"></div>
-    <div class="scene-layer">
-      <h1>見逃しエンド（仮）</h1>
-      <p>魔力または体温が不足していました。見逃しエンドです。</p>
-      <p>
-        <a class="btn-ui" href="grow.html">育成に戻る</a>
-        <a class="btn-ui" href="index.html">タイトルへ</a>
-      </p>
+  <!--
+    missed_end.html
+    - 小学生でも分かる説明:
+      ・これは「見落としエンド」画面だよ。
+      ・画面は順番に表示されて、ボタンで文章を進めるだけのシンプルな作り。
+      ・最後のボタンでタイトル（start.html）に戻るよ。
+  -->
+
+  <div id="screen" class="fade-target">
+    <div class="bg" style="background-image: url('assets/bg/01_bg_wayang_normal.png');" aria-hidden="true"></div>
+
+    <div class="scene-layer" role="dialog" aria-labelledby="me-title">
+
+      <!-- 灯り（上に重ねる） -->
+      <img id="me-light" src="assets/light/01_light_weak.png" alt="灯り" aria-hidden="true">
+
+      <!-- 壺（透過版） -->
+      <img id="me-vessel" src="assets/vessel/02_vessel_base_transparent.png" alt="壺" aria-hidden="true">
+
+      <!-- 本文画像を入れるコンテナ（JS が差し替え） -->
+      <div data-ui-text-container aria-hidden="true"></div>
+
+      <!-- タイトル（最終表示、初期は非表示） -->
+      <img id="me-title" class="hide" src="assets/ui_text/missed_end/04.png" alt="見落としエンドのタイトル">
+
+      <!-- すすむボタン（本文送り） -->
+      <img id="btn-next" class="btn-ui" src="assets/ui_button/brokenend/01_ui_badend_broken_btn_next_normal.png" alt="すすむ">
+
+      <!-- はじめにもどる（最終表示） -->
+      <img id="btn-restart" class="btn-ui hidden" src="assets/ui_button/brokenend/03_ui_badend_broken_btn_restart_normal.png" alt="はじめにもどる">
+
     </div>
-    <audio id="bgm" src="assets/sound/bgm_badend_darknight.mp3" preload="auto" loop></audio>
+
+    <!-- 音源 -->
+    <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
+    <audio id="bgm" src="assets/sound/bgm/bgm_badend_darknight.mp3" preload="auto" loop></audio>
   </div>
+
+  <script src="js/missed_end.js"></script>
 </body>
 </html>

@@ -1,0 +1,56 @@
+/*
+  missed_end.css
+  - 小学生でも分かる説明:
+    ・見落としエンドの見た目を定義します。
+    ・画面解像度は 1280x720 を基準に固定します。
+*/
+:root{
+  --screen-width: 1280px;
+  --screen-height: 720px;
+  --transition-duration: 400ms;
+  --me-body-fade-in: 600ms;
+  --me-body-fade-out: 400ms;
+  --btn-next-left: 1015px;
+  --btn-next-top: 600px;
+  --btn-restart-left: 530px;
+  --btn-restart-top: 550px;
+}
+
+html,body{height:100%;margin:0;background:#000;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center}
+
+#screen{position:relative;width:var(--screen-width);height:var(--screen-height);box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) ease}
+#screen.visible{opacity:1}
+
+.bg{position:absolute;inset:0;width:100%;height:100%;background-repeat:no-repeat;background-size:cover;background-position:center center;z-index:10;pointer-events:none}
+.scene-layer{position:absolute;left:0;top:0;width:100%;height:100%;z-index:20;pointer-events:none}
+
+/* 灯り: 画面を覆うように置いておく */
+#me-light{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:24;width:1280px;height:720px;pointer-events:none;opacity:0.4;transition:opacity var(--me-body-fade-out) linear}
+
+/* 壺はキャンバスにフィットするようにする */
+#me-vessel{position:absolute;left:0;top:0;transform:none;z-index:25;width:1280px;height:720px;max-width:none;max-height:none;image-rendering:pixelated;object-fit:none;pointer-events:none}
+
+/* 本文画像コンテナ */
+[data-ui-text-container]{position:absolute;left:0;top:0;width:100%;height:100%;z-index:40;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.ui-text-image{position:relative;left:50%;top:50%;transform:translate(-50%,-50%);width:1280px;height:720px;z-index:40;pointer-events:none;image-rendering:pixelated;display:block;opacity:0;transition:opacity var(--me-body-fade-in) ease}
+
+#me-title{position:absolute;left:0;top:0;transform:none;z-index:50;pointer-events:none;width:1280px;height:720px;max-width:none;max-height:none;transition:opacity var(--me-body-fade-in) ease}
+
+.btn-ui{position:absolute;transform:none;pointer-events:auto;user-select:none;-webkit-user-drag:none;width:auto;height:auto;z-index:60;cursor:pointer}
+.btn-ui:active{filter:brightness(1.5)}
+#btn-next{left:var(--btn-next-left);top:var(--btn-next-top)}
+#btn-restart{left:var(--btn-restart-left);top:var(--btn-restart-top)}
+
+.show{opacity: 1; transition: opacity var(--me-body-fade-in) ease}
+.hide{opacity: 0; transition: opacity var(--me-body-fade-out) ease}
+
+.btn-ui.hidden{display:none !important;opacity:0}
+.btn-ui.show{display:inline-block;opacity:1;transition:opacity 240ms ease}
+
+@media (max-width:1280px){
+  :root{ --screen-fit-w: calc((100vw - 20px) / 1280); --screen-fit-h: calc((100vh - 20px) / 720) }
+  #screen{ width:1280px; height:720px; transform: scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
+  .bg, .scene-layer{ width:1280px; height:720px }
+  .scene-layer img, .btn-ui{ max-width:none; height:auto }
+}

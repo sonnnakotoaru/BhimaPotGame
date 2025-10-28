@@ -36,6 +36,17 @@
   let duryFrame = null
   let duryTimer = null
 
+  // simple button-lock helper to avoid double-activation from rapid clicks
+  function lockButtons(ms){
+    try{
+      const t = typeof ms === 'number' ? ms : 600
+      if(lockButtons._locked) return false
+      lockButtons._locked = true
+      setTimeout(()=>{ lockButtons._locked = false }, t)
+      return true
+    }catch(e){ return true }
+  }
+
   // キャラ画像を指定した番号に切り替える。範囲外の番号は端に丸めるよ。
   function setCharStateByIndex(i){
     const frame = duryFrame || document.getElementById('duryodhana-frame')
@@ -147,8 +158,8 @@
     showImage(idx)
 
     // ボタンにクリックイベントをつけます。ハンドラはあとで外すために保存します。
-    if(btnNext){ btnNext._dist_handler = ()=>{ tryPlayBgm(); next() }; btnNext.addEventListener('click', btnNext._dist_handler) }
-    if(btnRestart){ btnRestart._dist_handler = ()=>{ if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { location.href = 'start.html' } }; btnRestart.addEventListener('click', btnRestart._dist_handler) }
+  if(btnNext){ btnNext._dist_handler = ()=>{ if(!lockButtons(600)) return; tryPlayBgm(); next() }; btnNext.addEventListener('click', btnNext._dist_handler) }
+  if(btnRestart){ btnRestart._dist_handler = ()=>{ if(!lockButtons(800)) return; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { location.href = 'start.html' } }; btnRestart.addEventListener('click', btnRestart._dist_handler) }
 
     // 画面全体をふわっと表示
     const screen = document.getElementById('screen'); if(screen) screen.classList.add('visible')

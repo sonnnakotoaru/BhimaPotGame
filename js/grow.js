@@ -17,6 +17,7 @@
   const bhimaHand = document.getElementById('bhima-hand')
   const bloodSplash = document.getElementById('blood-splash')
   const dayLabel = document.getElementById('day-label')
+    
 
   const gaugeKarma = document.getElementById('gauge-karma')
   const gaugeVessel = document.getElementById('gauge-vessel')
@@ -27,6 +28,7 @@
   const btnWarm = document.getElementById('btn-warm')
   const btnKitchen = document.getElementById('btn-kitchen')
   const btnFollow = document.getElementById('btn-follow')
+  const btnSleep = document.getElementById('btn-sleep')
 
   // Audio
   const bgm = document.getElementById('bgm')
@@ -39,6 +41,12 @@
   const seButton = document.getElementById('se-button')
   const seBlood = document.getElementById('se-blood-drop')
   const seHeart = document.getElementById('se-heart')
+  // day/send related SEs (optional - added in grow.html)
+  const seTyuubou = document.getElementById('se-tyuubouniiku')
+  const seMasuta = document.getElementById('se-masuta-nigoukou')
+  const seSleepBed = document.getElementById('se-sleep-bed')
+  const seNyu = document.getElementById('se-nyuusitu')
+  const seTaisitu = document.getElementById('se-taisitu')
 
 
   // state
@@ -47,6 +55,17 @@
   let temp = 2
           
   let vesselLevel = 0
+  // remember whether bgm was playing before a day-send so we can resume after sleep
+  let bgmWasPlayingBeforeDaySend = false
+  // busy lock state (initialized early to avoid TDZ when setBusy is called)
+  let busy = false
+  let _lockedButtons = []
+  // suppress innga (karma) auto-dialog for a short window after day-advance to avoid
+  // immediate anger dialog showing right after sleep/fade transitions
+  let suppressInngaUntil = 0
+  // suppress all automatic dialogs (mana/temp/innga/utuwa) for a short window
+  // after sleep/day-advance to avoid any visual clash with fade transitions.
+  let suppressAutoDialogsUntil = 0
   // 因果 (karma) の状態: 0 は未表示、1..3 がゲージ段階
   let karma = 0
   // internal flag: whether a mana->karma "break" was already handled during the current animation
@@ -86,6 +105,14 @@
     'assets/bhima_hand/warming/02_bhima_warm_mid.png',
     'assets/bhima_hand/warming/03_bhima_warm_hold.png'
   ]
+  // preload day-send dialog images (hiokuri 01..05)
+  PRELOAD_ASSETS.push(
+    'assets/ui_text/grow/hiokuri/01.png',
+    'assets/ui_text/grow/hiokuri/02.png',
+    'assets/ui_text/grow/hiokuri/03.png',
+    'assets/ui_text/grow/hiokuri/04.png',
+    'assets/ui_text/grow/hiokuri/05.png'
+  )
   function preloadAssets(list){ try{ list.forEach(s=>{ const i=new Image(); i.src = s }) }catch(e){} }
 
   // ------------------------
@@ -141,6 +168,8 @@
   ,vesselGlowToTransparentHold: 300
   ,vesselPostTransparentPause: 120
   ,vesselLevel3EndPause: 300
+  // 日送りセリフ表示時間（ms）: hiokuri 表示の持続時間
+  ,hiokuriDisplay: 1400
   }
   // ランタイムで変更できるようグローバルに公開
   window.growTimings = TIMINGS
@@ -220,9 +249,199 @@
 
   const growDialog = document.getElementById('grow-dialog')
 
+  // Helper to set/clear the grow dialog src with respect to suppression windows.
+  function setGrowDialogSrc(src){
+    try{
+      if(!growDialog) return
+      // clearing is always allowed
+      if(!src){ try{ growDialog.src = '' }catch(e){} ; return }
+      // if automatic dialogs are suppressed, do not set a new non-empty src
+      if(Date.now() < suppressAutoDialogsUntil) return
+      try{ growDialog.src = src }catch(e){}
+    }catch(e){}
+  }
+
+  // Dur yodhana eye animation helper for day-send dialog
+  let duryEyeAnimating = false
+  function animateDuryEyeFor(totalMs){
+    try{
+      if(!duryEye || duryEyeAnimating) return
+      duryEyeAnimating = true
+      const eyeFrames = [
+        'assets/character/wayang/07_duryodhana_wayang_eye_closed.png',
+        'assets/character/wayang/06_duryodhana_wayang_eye_half.png',
+        'assets/character/wayang/05_duryodhana_wayang_eye_open_narrow.png',
+        'assets/character/wayang/04_duryodhana_wayang_eye_open_clear.png',
+        'assets/character/wayang/05_duryodhana_wayang_eye_open_narrow.png',
+        'assets/character/wayang/06_duryodhana_wayang_eye_half.png',
+        'assets/character/wayang/07_duryodhana_wayang_eye_closed.png'
+      ]
+      const prev = duryEye.src || ''
+      const interval = Math.max(50, Math.floor(totalMs / eyeFrames.length))
+      eyeFrames.forEach((f, i)=>{
+        setTimeout(()=>{ try{ duryEye.src = f }catch(e){} }, i * interval)
+      })
+      setTimeout(()=>{ try{ duryEye.src = prev }catch(e){} ; duryEyeAnimating = false }, totalMs + 20)
+    }catch(e){ duryEyeAnimating = false }
+  }
+
+  // day label images (used for day-send screen)
+  const dayLabelMap = {
+    1: 'assets/ui_text/grow/day_label/01_ui_day_label_01.png',
+    2: 'assets/ui_text/grow/day_label/02_ui_day_label_02.png',
+    3: 'assets/ui_text/grow/day_label/03_ui_day_label_03.png',
+    4: 'assets/ui_text/grow/day_label/04_ui_day_label_04.png',
+    5: 'assets/ui_text/grow/day_label/05_ui_day_label_05.png'
+  }
+
+  // hiokuri (日送りセリフ) images per day
+  const hiokuriMap = {
+    1: 'assets/ui_text/grow/hiokuri/01.png',
+    2: 'assets/ui_text/grow/hiokuri/02.png',
+    3: 'assets/ui_text/grow/hiokuri/03.png',
+    4: 'assets/ui_text/grow/hiokuri/04.png',
+    5: 'assets/ui_text/grow/hiokuri/05.png'
+  }
+
+  function setDay(n){
+    day = Math.max(1, Math.min(5, parseInt(n,10)||1))
+    try{ if(dayLabel) dayLabel.src = dayLabelMap[day] || dayLabel.src }catch(e){}
+    // reset mana/temp to initial values on day advance
+    mana = 2; temp = 2
+    updateGauges()
+    // show appropriate primary action button for this day
+    showPrimaryActionForDay()
+    // ensure action buttons for the grow screen (blood/warm) are visible on the new day
+    try{ if(btnBlood) btnBlood.style.display = ''; if(btnWarm) btnWarm.style.display = '' }catch(e){}
+  }
+
+  function showPrimaryActionForDay(){
+    // Day 1 and Day 5 -> show kitchen button; Day 2-4 -> show follow button
+    try{
+      // Show kitchen on Day 1, Day 3 and Day 5. Show follow on Day 2 and Day 4 only.
+      if(btnKitchen) btnKitchen.style.display = (day===1 || day===3 || day===5) ? '' : 'none'
+      if(btnFollow) btnFollow.style.display = (day===2 || day===4) ? '' : 'none'
+      // hide sleep by default
+      if(btnSleep) btnSleep.style.display = 'none'
+    }catch(e){}
+  }
+
+  // helper to play audio element and return a promise that resolves when it ends (or after timeout)
+  function playAudioElement(el){
+    return new Promise((resolve)=>{
+      try{
+        if(!el) return resolve()
+        try{ el.currentTime = 0 }catch(e){}
+        const p = el.play()
+        let resolved = false
+        const onEnd = ()=>{ if(resolved) return; resolved = true; try{ el.removeEventListener('ended', onEnd) }catch(e){}; resolve() }
+        try{ el.addEventListener('ended', onEnd) }catch(e){}
+        // fallback: resolve after duration (if available) or 800ms
+        const fallback = Math.max(800, (el.duration && isFinite(el.duration) ? Math.round(el.duration*1000) : 800))
+        setTimeout(()=> onEnd(), fallback + 50)
+        if(p && p.then) p.catch(()=>{})
+      }catch(e){ resolve() }
+    })
+  }
+
+  // Fade helpers for growDialog (hiokuri day-send images)
+  function fadeInGrowDialog(src, ms){
+    return new Promise((resolve)=>{
+      try{
+        // Respect global suppression window: if automatic dialogs are currently
+        // suppressed, don't perform a fade-in or set the src (prevents flashes).
+        try{ if(Date.now() < suppressAutoDialogsUntil){ resolve(); return } }catch(e){}
+        if(!growDialog) return resolve()
+  setGrowDialogSrc(src || '')
+        // ensure visible block before starting opacity transition
+        growDialog.style.display = 'block'
+        // apply explicit transition duration if provided
+        if(typeof ms === 'number') growDialog.style.transition = 'opacity ' + (ms/1000) + 's ease'
+        // start from 0
+        growDialog.style.opacity = '0'
+        // next frame -> set to 1 to trigger transition
+        requestAnimationFrame(()=>{
+          try{ growDialog.style.opacity = '1' }catch(e){}
+        })
+        const onEnd = (ev)=>{ try{ growDialog.removeEventListener('transitionend', onEnd) }catch(e){} ; resolve() }
+        growDialog.addEventListener('transitionend', onEnd)
+        // fallback
+        setTimeout(()=>{ try{ growDialog.removeEventListener('transitionend', onEnd) }catch(e){} ; resolve() }, (ms||300) + 80)
+      }catch(e){ resolve() }
+    })
+  }
+
+  function fadeOutGrowDialog(ms){
+    return new Promise((resolve)=>{
+      try{
+        if(!growDialog) return resolve()
+        // If suppressed, ensure dialog is hidden and clear src immediately
+        try{ if(Date.now() < suppressAutoDialogsUntil){ try{ growDialog.style.display='none'; growDialog.src=''; growDialog.style.opacity='0' }catch(e){} ; resolve(); return } }catch(e){}
+        if(typeof ms === 'number') growDialog.style.transition = 'opacity ' + (ms/1000) + 's ease'
+        // start fade out
+        growDialog.style.opacity = '0'
+  const onEnd = (ev)=>{ try{ growDialog.removeEventListener('transitionend', onEnd) }catch(e){} ; try{ growDialog.style.display='none'; setGrowDialogSrc('') }catch(e){} ; resolve() }
+        growDialog.addEventListener('transitionend', onEnd)
+        // fallback
+  setTimeout(()=>{ try{ growDialog.removeEventListener('transitionend', onEnd) }catch(e){} ; try{ growDialog.style.display='none'; setGrowDialogSrc('') }catch(e){} ; resolve() }, (ms||300) + 80)
+      }catch(e){ resolve() }
+    })
+  }
+
+  // wait until the screen fade-in transition completes (or timeout)
+  function waitForFadeIn(timeoutFallback){
+    return new Promise((resolve)=>{
+      try{
+        if(!screen) return resolve()
+        // compute fallback from computed transition-duration (first value)
+        const cs = window.getComputedStyle(screen)
+        let dur = 0
+        try{
+          const td = (cs && cs.transitionDuration) ? String(cs.transitionDuration).split(',')[0].trim() : ''
+          if(td.endsWith('ms')) dur = Math.round(parseFloat(td))
+          else if(td.endsWith('s')) dur = Math.round(parseFloat(td) * 1000)
+        }catch(e){ dur = 0 }
+        const fallback = typeof timeoutFallback === 'number' ? timeoutFallback : (dur > 0 ? dur + 80 : 500)
+        let resolved = false
+        const onTransition = (ev)=>{
+          try{
+            if(ev && ev.target === screen && (ev.propertyName === 'opacity' || ev.propertyName === 'opacity ')){
+              if(resolved) return
+              resolved = true
+              screen.removeEventListener('transitionend', onTransition)
+              resolve()
+            }
+          }catch(e){}
+        }
+        screen.addEventListener('transitionend', onTransition)
+        // fallback timer
+        setTimeout(()=>{ if(resolved) return; resolved = true; try{ screen.removeEventListener('transitionend', onTransition) }catch(e){}; resolve() }, fallback)
+      }catch(e){ resolve() }
+    })
+  }
+
   function showDialogFor(type, level){
     // Returns a Promise that resolves when the dialog hide timeout completes.
     return new Promise((resolve)=>{
+      // If automatic dialogs are suppressed, return immediately and record a suppressed log
+      try{
+        const now = Date.now()
+        if(now < (suppressAutoDialogsUntil || 0) || window.__growDialogsSuppressed){
+          resolve(); return
+        }
+      }catch(e){}
+      // Temporary debug logging: record who called showDialogFor and why.
+      try{
+        // (debug logging removed in production builds)
+      }catch(e){}
+      // If automatic dialogs are suppressed (e.g. immediately after sleep/day-advance),
+      // ignore any attempts to show dialogs. This prevents any dialog (mana/temp/innga/utuwa)
+      // from flashing during the fade-out/fade-in window.
+      try{
+        if(Date.now() < suppressAutoDialogsUntil){ resolve(); return }
+        // Backwards-compatible: if only innga-specific suppression is set, respect it as well
+        if(type === 'innga' && Date.now() < suppressInngaUntil){ resolve(); return }
+      }catch(e){}
       let src = ''
       if(type === 'mana') src = (maryokuMap[day] && maryokuMap[day][level]) || ''
       if(type === 'temp') src = (taionnMap[day] && taionnMap[day][level]) || ''
@@ -231,9 +450,12 @@
       if(!src){ resolve(); return }
       try{
         if(!growDialog){ resolve(); return }
-        growDialog.src = src
-        growDialog.style.display = 'block'
-        // ドゥリーヨダナの目と口をセリフ表示中に演出する
+  setGrowDialogSrc(src)
+  // Ensure dialog is visible: CSS sets #grow-dialog opacity:0 by default,
+  // so set display:block and drive opacity -> 1 so the image actually appears.
+  growDialog.style.display = 'block'
+  try{ growDialog.style.opacity = '1' }catch(e){}
+  // ドゥリーヨダナの目と口をセリフ表示中に演出する
         try{
           const dialogDur = 1400
           if(type === 'innga' || type === 'utuwa'){
@@ -277,8 +499,15 @@
             }
           }
         }catch(e){}
-        // show for dialogDur ms then hide and resolve
-        setTimeout(()=>{ try{ growDialog.style.display = 'none'; growDialog.src = '' }catch(e){} ; resolve() }, 1400)
+        // show for dialogDur ms then fade out and resolve
+        setTimeout(()=>{
+          try{ 
+            // start fade-out so it respects CSS transition
+            try{ growDialog.style.opacity = '0' }catch(e){}
+            // after transition remove from layout and clear src
+            setTimeout(()=>{ try{ growDialog.style.display = 'none'; setGrowDialogSrc('') }catch(e){} ; resolve() }, 320)
+          }catch(e){ try{ growDialog.style.display = 'none'; setGrowDialogSrc('') }catch(_){} ; resolve() }
+        }, 1400)
       }catch(e){ resolve() }
     })
   }
@@ -296,7 +525,16 @@
       showDialogFor('temp', level)
       return
     }
-    if(karma > 0){ showDialogFor('innga', Math.min(3, karma)); return }
+    // If we recently advanced day (e.g., via sleep), we may want to avoid showing the
+    // innga (karma) dialog immediately because it conflicts with the day-send flow.
+    // suppressInngaUntil is set during the sleep sequence; skip innga if still suppressed.
+    if(karma > 0){
+      if(Date.now() < suppressInngaUntil){
+        // skip innga for now, continue to vessel check
+      } else {
+        showDialogFor('innga', Math.min(3, karma)); return
+      }
+    }
     if(vesselLevel > 0){ showDialogFor('utuwa', Math.min(3, vesselLevel)); return }
   }
 
@@ -745,8 +983,6 @@
   }
 
   // busy lock
-  let busy = false
-  let _lockedButtons = []
   function setBusy(state, targets){
     if(state){
       busy = true
@@ -928,20 +1164,177 @@
 
   async function doTransitionCheck(target){
     try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+    // start fade
     if(window.transitionAPI && window.transitionAPI.fadeOutThen){ window.transitionAPI.fadeOutThen(()=>{}, 400) } else { screen && screen.classList.remove('visible') }
-    setTimeout(()=>{
+    // Wait for fade to visually complete before deciding next action
+    setTimeout(async ()=>{
       const okMana = (mana >=8)
       const okTemp = (temp >=8)
-  if(okMana && okTemp){ if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { location.href = 'start.html' } }
-      else { if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('missed_end.html') } else { location.href = 'missed_end.html' } }
+      if(okMana && okTemp){
+        // normal path -> start
+        if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { location.href = 'start.html' }
+        return
+      }
+      // insufficient gauges -> missed_end. Play exit SE then action-specific SE then navigate.
+      try{
+        await playAudioElement(seTaisitu)
+      }catch(e){}
+      try{
+        if(target === 'kitchen') await playAudioElement(seTyuubou)
+        else if(target === 'follow') await playAudioElement(seMasuta)
+      }catch(e){}
+      try{ if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('missed_end.html') } else { location.href = 'missed_end.html' } }catch(e){ try{ location.href = 'missed_end.html' }catch(_){} }
     }, 450)
   }
 
-  btnKitchen && btnKitchen.addEventListener('click', ()=>doTransitionCheck('kitchen'))
-  btnFollow && btnFollow.addEventListener('click', ()=>doTransitionCheck('follow'))
+  // start day-send sequence (action: 'kitchen'|'follow')
+  async function startDaySend(action){
+    try{
+      setBusy(true)
+      try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+      // stop BGM when entering day-send (remember previous playing state)
+      try{ if(bgm){ bgmWasPlayingBeforeDaySend = !bgm.paused; bgm.pause(); } }catch(e){}
+      // fade out
+      try{ if(window.transitionAPI && window.transitionAPI.fadeOutThen) window.transitionAPI.fadeOutThen(()=>{}, 400); else if(screen && screen.classList) screen.classList.remove('visible') }catch(e){}
+      // wait for fade
+      await new Promise(r=>setTimeout(r, 450))
+      // play exit SE (退室)
+      try{ await playAudioElement(seTaisitu) }catch(e){}
+      // play action-specific SE
+      try{
+        if(action === 'kitchen') await playAudioElement(seTyuubou)
+        else if(action === 'follow') await playAudioElement(seMasuta)
+      }catch(e){}
+      // NOTE: previously we navigated immediately for day 5 here.
+      // Changed behavior: play exit SE + action SE, then fade IN, show day-send dialog,
+      // and AFTER the dialog has finished, navigate to the true end.
+      // fade in and show day-send dialog (use hiokuri day-send images)
+      try{ requestAnimationFrame(()=> setTimeout(()=> screen && screen.classList.add('visible'), 20)) }catch(e){}
+      // hide primary buttons and action buttons while dialog shows
+      try{ if(btnKitchen) btnKitchen.style.display='none'; if(btnFollow) btnFollow.style.display='none'; if(btnBlood) btnBlood.style.display='none'; if(btnWarm) btnWarm.style.display='none' }catch(e){}
+      // wait until fade-in finishes, then show day-send dialog image (hiokuri) for the current day
+      try{ await waitForFadeIn() }catch(e){}
+      // wait 2 seconds after fade-in before showing the dialog image
+      try{ await new Promise(r=>setTimeout(r, 2000)) }catch(e){}
+      try{
+  const hiokuriPath = hiokuriMap[day] || hiokuriMap[5]
+  // fade in
+  try{ await fadeInGrowDialog(hiokuriPath, 300) }catch(e){}
+  // animate Duryodhana's eye during the hiokuri display so it blinks while the dialog is visible
+  try{ animateDuryEyeFor(TIMINGS.hiokuriDisplay) }catch(e){}
+  // keep visible for display duration (configurable via TIMINGS.hiokuriDisplay)
+  await new Promise(r=>setTimeout(r, TIMINGS.hiokuriDisplay))
+        // fade out
+        try{ await fadeOutGrowDialog(300) }catch(e){}
+      }catch(e){}
+      // after dialog: if this was Day 5 and the player took the kitchen action,
+      // transition to the true end. Otherwise, show the sleep button to continue.
+      try{
+        if(day === 5 && action === 'kitchen'){
+          // unlock UI briefly then navigate out
+          setBusy(false)
+          try{ if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('true_end.html') } else { location.href = 'true_end.html' } }catch(e){ try{ location.href = 'true_end.html' }catch(_){} }
+          return
+        }
+      }catch(e){}
+      // not Day 5/kitchen: show sleep button to continue
+      try{ if(btnSleep) btnSleep.style.display = '' }catch(e){}
+      setBusy(false)
+    }catch(e){ setBusy(false) }
+  }
+
+  // primary action handlers: if gauges meet threshold, run day-send; otherwise fallback to existing transition check
+  btnKitchen && btnKitchen.addEventListener('click', async (e)=>{
+    if(busy) return
+    e && e.preventDefault()
+    try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+    const okMana = (mana >= 8)
+    const okTemp = (temp >= 8)
+    // kitchen is primary on day 1 and day 5
+    // treat day 3 as a kitchen-primary day as well
+    if(okMana && okTemp && (day === 1 || day === 3 || day === 5)){
+      await startDaySend('kitchen')
+      return
+    }
+    // If we are falling back to the transition check (insufficient gauges),
+    // stop the BGM immediately at the moment of button press so audio state
+    // matches the day-send behavior.
+    try{ if(bgm){ bgm.pause(); try{ bgm.currentTime = 0 }catch(e){} } }catch(e){}
+    doTransitionCheck('kitchen')
+  })
+
+  btnFollow && btnFollow.addEventListener('click', async (e)=>{
+    if(busy) return
+    e && e.preventDefault()
+    try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+    const okMana = (mana >= 8)
+    const okTemp = (temp >= 8)
+    // follow is primary on days 2-4
+    // follow should be primary only on days 2 and 4 (day 3 is kitchen)
+    if(okMana && okTemp && (day === 2 || day === 4)){
+      await startDaySend('follow')
+      return
+    }
+    // If we are falling back to the transition check (insufficient gauges),
+    // stop the BGM immediately at the moment of button press so audio state
+    // matches the day-send behavior.
+    try{ if(bgm){ bgm.pause(); try{ bgm.currentTime = 0 }catch(e){} } }catch(e){}
+    doTransitionCheck('follow')
+  })
+
+  // sleep button: advances to next day
+  btnSleep && btnSleep.addEventListener('click', async (e)=>{
+    if(busy) return
+    setBusy(true)
+    // Immediately suppress automatic dialogs to avoid any scheduled/queued dialog
+    // firing during the sleep fade-out/fade-in sequence.
+    try{
+      const SUPPRESS_MS = 3000
+      suppressInngaUntil = Date.now() + SUPPRESS_MS
+      suppressAutoDialogsUntil = Date.now() + SUPPRESS_MS
+      try{ window.__growDialogsSuppressed = true; setTimeout(()=>{ try{ window.__growDialogsSuppressed = false }catch(e){} }, SUPPRESS_MS + 200) }catch(e){}
+    }catch(e){}
+    e && e.preventDefault()
+    try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+  // extend fade duration for sleep sequence: make fade-out/in slightly longer
+  try{ if(screen && screen.classList){ screen.classList.add('sleep-fade') } }catch(e){}
+  try{ if(window.transitionAPI && window.transitionAPI.fadeOutThen) window.transitionAPI.fadeOutThen(()=>{}, 800); else if(screen && screen.classList) screen.classList.remove('visible') }catch(e){}
+  // wait slightly longer than the transition so subsequent actions run after fade completes
+  await new Promise(r=>setTimeout(r, 850))
+  try{ await playAudioElement(seSleepBed) }catch(e){}
+    // advance day and fade in
+    try{ setDay(day + 1) }catch(e){}
+    try{ requestAnimationFrame(()=> setTimeout(()=> screen && screen.classList.add('visible'), 20)) }catch(e){}
+  // resume BGM after fade-in if it was playing before day-send
+  try{ await waitForFadeIn() }catch(e){}
+  try{ if(bgmWasPlayingBeforeDaySend && bgm){ bgm.currentTime = 0; const p = bgm.play(); if(p && p.then) p.catch(()=>{}); } }catch(e){}
+  bgmWasPlayingBeforeDaySend = false
+  // restore original screen transition (remove temporary class)
+  try{ if(screen && screen.classList) screen.classList.remove('sleep-fade') }catch(e){}
+    // ensure sleep button hidden after advancing
+    try{ if(btnSleep) btnSleep.style.display = 'none' }catch(e){}
+    // clear any residual dialog image (avoid stale innga/hiokuri showing immediately)
+  try{ if(growDialog){ growDialog.style.opacity = '0'; growDialog.style.display = 'none'; setGrowDialogSrc(''); try{ growDialog.classList.remove('shake','horror','horizontal','micro') }catch(e){} } }catch(e){}
+    // show any immediate dialog for new day (delayed slightly to avoid visual clash with fade)
+    try{
+      // suppress all automatic dialogs for a short window so no dialog (mana/temp/innga/utuwa)
+      // flashes immediately after the sleep fade-in. Use suppressAutoDialogsUntil as the
+      // authoritative guard; keep suppressInngaUntil for backward compatibility.
+  const SUPPRESS_MS = 3000
+  suppressInngaUntil = Date.now() + SUPPRESS_MS
+  suppressAutoDialogsUntil = Date.now() + SUPPRESS_MS
+  // Schedule showAutoDialog to run after the suppression window has passed.
+  try{ window.__growDialogsSuppressed = true; setTimeout(()=>{ try{ window.__growDialogsSuppressed = false }catch(e){} }, SUPPRESS_MS + 200) }catch(e){}
+  setTimeout(()=>{ try{ showAutoDialog() }catch(e){} }, SUPPRESS_MS + 100)
+    }catch(e){}
+    setBusy(false)
+  })
 
   document.addEventListener('DOMContentLoaded', ()=>{
-    updateGauges(); playBgmIfNeeded();
+    updateGauges();
+    // reduce bgm playback volume to 0.8x for bgm_normal_piano
+    try{ if(bgm) bgm.volume = 0.8 }catch(e){}
+    playBgmIfNeeded();
     // preload assets to ensure blood/hand frames are ready
     try{ preloadAssets(PRELOAD_ASSETS) }catch(e){}
   // amplify heartbeat SE ~2.5x so it's more audible during warm sequence
@@ -954,6 +1347,7 @@
   try{ amplifyAudioElement('se-vessel-crack3', 1.5) }catch(e){}
     startAnims(); try{ if(screen && screen.classList) { requestAnimationFrame(()=> setTimeout(()=> screen.classList.add('visible'), 20)) } }catch(e){}
   // show initial dialog based on current gauges/day
+  try{ showPrimaryActionForDay() }catch(e){}
   // Ensure default pulse interval exists
   try{ TIMINGS.vesselGlowPulseInterval = TIMINGS.vesselGlowPulseInterval || 150 }catch(e){}
   setTimeout(()=>{ try{ showAutoDialog() }catch(e){} }, 600)
@@ -962,6 +1356,7 @@
   // (タイミング調整パネルは廃止されました)
 
   window.growSceneInit = function(){ updateGauges(); try{ if(bgm){ bgm.currentTime = 0; const p = bgm.play(); if(p && p.then){ p.catch(()=>{ try{ if(document.getElementById('audio-unlock')) return; const o = document.createElement('div'); o.id='audio-unlock'; o.style.position='fixed'; o.style.left='0'; o.style.top='0'; o.style.right='0'; o.style.bottom='0'; o.style.display='flex'; o.style.alignItems='center'; o.style.justifyContent='center'; o.style.background='rgba(0,0,0,0.5)'; o.style.zIndex='9999'; const btn=document.createElement('button'); btn.textContent='音を再生する'; btn.style.fontSize='20px'; btn.style.padding='12px 20px'; btn.addEventListener('click', ()=>{ try{ bgm.play().catch(()=>{}) }catch(e){} try{ seButton && seButton.play().catch(()=>{}) }catch(e){} if(o && o.parentElement) o.parentElement.removeChild(o) }); o.appendChild(btn); document.body.appendChild(o) }catch(e){} }) } } }catch(e){} startAnims() }
+  window.growSceneInit = function(){ updateGauges(); try{ if(bgm){ bgm.volume = 0.8; bgm.currentTime = 0; const p = bgm.play(); if(p && p.then){ p.catch(()=>{ try{ if(document.getElementById('audio-unlock')) return; const o = document.createElement('div'); o.id='audio-unlock'; o.style.position='fixed'; o.style.left='0'; o.style.top='0'; o.style.right='0'; o.style.bottom='0'; o.style.display='flex'; o.style.alignItems='center'; o.style.justifyContent='center'; o.style.background='rgba(0,0,0,0.5)'; o.style.zIndex='9999'; const btn=document.createElement('button'); btn.textContent='音を再生する'; btn.style.fontSize='20px'; btn.style.padding='12px 20px'; btn.addEventListener('click', ()=>{ try{ bgm.play().catch(()=>{}) }catch(e){} try{ seButton && seButton.play().catch(()=>{}) }catch(e){} if(o && o.parentElement) o.parentElement.removeChild(o) }); o.appendChild(btn); document.body.appendChild(o) }catch(e){} }) } } }catch(e){} startAnims() }
 
   window.growSceneStop = function(){ stopAnims() }
 

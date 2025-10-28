@@ -22,6 +22,9 @@ body{display:flex;align-items:center;justify-content:center}
 
   --grow-btn-follow-left: 75.78125%; /* 970 / 1280 */
   --grow-btn-follow-top: 66.6667%;   /* 480 / 720 */
+  /* ねむるボタン位置 (デフォルトは画面下寄せ) */
+  --grow-btn-sleep-left: 75.78125%; /* 970 / 1280 */
+  --grow-btn-sleep-top: 55%;  /* 600 / 720 */
 }
 
 /* ボタンに変数を適用するだけです。数値を変えると位置が変わります。 */
@@ -29,6 +32,8 @@ body{display:flex;align-items:center;justify-content:center}
 #btn-warm{ position:absolute; left:var(--grow-btn-warm-left); top:var(--grow-btn-warm-top); }
 #btn-kitchen{ position:absolute; left:var(--grow-btn-kitchen-left); top:var(--grow-btn-kitchen-top); }
 #btn-follow{ position:absolute; left:var(--grow-btn-follow-left); top:var(--grow-btn-follow-top); }
+/* ねむるボタンの位置は変数で制御します。:root の値を変更してください */
+#btn-sleep{ position:absolute; left:var(--grow-btn-sleep-left); top:var(--grow-btn-sleep-top); }
 
 /* busy 時（押せない時間帯）にボタンを明るくしてユーザーに示すクラス */
 .btn-locked{
@@ -63,6 +68,13 @@ body{display:flex;align-items:center;justify-content:center}
 /* 画像は絶対配置で置かれ、ドット補間の設定も scene.css と同じにする */
 .scene-layer img{position:absolute;top:0;left:0;width:auto;height:auto;image-rendering:pixelated}
 
+/* Ensure the vessel artwork is displayed at native 1280x720 canvas size
+  (some asset files may contain different metadata; enforce explicit size
+  to prevent accidental scaling or placement issues). */
+#vessel{ position:absolute; left:0; top:0; width:1280px; height:720px; max-width:none; max-height:none; image-rendering:pixelated; object-fit: none; z-index:10 }
+
+/* Default light for general scenes should be full brightness. */
+#light-frame{ opacity: 1; transition: opacity 300ms ease }
 /* Dialog (ドゥリーヨダナのセリフ画像) */
 /* セリフ画像は 1280x720 のフルキャンバス画像です。
    ここで強制的にキャンバスサイズに合わせ、
@@ -80,7 +92,12 @@ body{display:flex;align-items:center;justify-content:center}
   z-index:70; /* grow.html 内の意図している重ね順に合わせる */
   pointer-events:none; /* セリフはインタラクティブにしない */
   display:none; /* JS で表示/非表示を切り替える */
+  opacity:0; /* default hidden for fade */
+  transition: opacity 300ms ease; /* used when fading in/out */
 }
+
+/* visible state for dialog when using CSS-based fade */
+#grow-dialog.visible{ display:block; opacity:1 }
 
 /* UI ボタンはクリック可能にするため pointer-events を有効にする */
 .scene-layer .btn-ui, .btn-ui{ pointer-events:auto; cursor:pointer; }

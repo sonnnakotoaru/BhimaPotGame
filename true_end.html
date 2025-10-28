@@ -2,29 +2,65 @@
 <!--
   true_end.html
   - 小学生でも分かる説明:
-    ・これは真エンドのページです。おめでとうメッセージが表示されます。
-    ・ボタンで育成に戻ることやタイトルに戻ることができます。
+    ・これは「約束のエンド」画面です。
+    ・やることはかんたん: BGM を流して、ドゥリーヨダナの画像を少し動かしながら
+      本文画像をボタンで順に見せます。最後にタイトルと「はじめにもどる」を出します。
 -->
 <html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ビーマの壺</title>
-  <link rel="stylesheet" href="css/scene.css">
+  <title>約束のエンド</title>
+  <link rel="stylesheet" href="css/true_end.css">
   <link rel="icon" href="data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" type="image/gif">
 </head>
 <body>
-  <div id="screen">
-    <div class="bg" style="background-image: url('assets/bg/10_bg_trueend.png');" aria-hidden="true"></div>
-    <div class="scene-layer">
-      <h1>真エンド</h1>
-      <p>これは真の結末です。おめでとうございます。</p>
-      <p>
-        <a class="btn-ui" href="grow.html">育成に戻る</a>
-        <a class="btn-ui" href="index.html">タイトルへ</a>
-      </p>
+  <div id="screen" class="fade-target">
+    <!-- 背景 -->
+    <div class="bg" style="background-image: url('assets/bg/03_bg_white_transition.png');" aria-hidden="true"></div>
+
+    <!-- シーンレイヤー: ドゥリョダナ（分割画像）→UIテキスト→ボタン -->
+    <div class="scene-layer" role="dialog" aria-labelledby="te-title">
+
+      <!-- ドゥリョダナ本体: 下->中->上 の順で重ねる (最初は表示される) -->
+      <div id="te-character" aria-hidden="true">
+        <!-- 本体下 (z-index 30) -->
+        <img id="te-body-bottom" src="assets/character/TRUE/06_duryodhana_true_bottom.png" alt="" aria-hidden="true">
+        <!-- 本体中 (z-index 31) -->
+        <img id="te-body-mid" src="assets/character/TRUE/05_duryodhana_true_mid.png" alt="" aria-hidden="true">
+        <!-- 本体上 (z-index 32) -->
+        <img id="te-body-top" src="assets/character/TRUE/04_duryodhana_true_top.png" alt="" aria-hidden="true">
+
+        <!-- 目・口は別レイヤーで上に重ねる -->
+        <img id="te-eye" src="assets/character/TRUE/07_duryodhana_true_eye_open_clear.png" alt="" aria-hidden="true">
+        <img id="te-mouth" src="assets/character/TRUE/12_duryodhana_true_mouth_closed_smile.png" alt="" aria-hidden="true">
+
+        <!-- 前髪: 上->中->下 をさらに上に重ねる -->
+        <img id="te-hair-top" src="assets/character/TRUE/01_duryodhana_true_hair_top.png" alt="" aria-hidden="true">
+        <img id="te-hair-mid" src="assets/character/TRUE/02_duryodhana_true_hair_mid.png" alt="" aria-hidden="true">
+        <img id="te-hair-bottom" src="assets/character/TRUE/03_duryodhana_true_hair_bottom.png" alt="" aria-hidden="true">
+      </div>
+
+      <!-- 本文画像（JS がここに差し替えます） -->
+      <div data-ui-text-container aria-hidden="true"></div>
+
+      <!-- タイトル画像（最終表示）: 初期は非表示 -->
+      <img id="te-title" class="hide" src="assets/ui_text/trueend/09.png" alt="約束のエンド" aria-hidden="true">
+
+      <!-- すすむボタン（本文送り） -->
+      <img id="btn-next" class="btn-ui" src="assets/ui_button/trueend/01_ui_trueend_btn_next_normal.png" alt="すすむボタン">
+
+      <!-- はじめにもどる（最終表示） -->
+      <img id="btn-restart" class="btn-ui hidden" src="assets/ui_button/trueend/03_ui_trueend_btn_restart_normal.png" alt="はじめにもどる">
+
     </div>
-    <audio id="bgm" src="assets/sound/bgm_gameover_happyloop.mp3" preload="auto" loop></audio>
+
+    <!-- BGM / SE -->
+  <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
+  <audio id="bgm" src="assets/sound/bgm/bgm_trueend_return.mp3" preload="auto" loop></audio>
+
   </div>
+
+  <script src="js/true_end.js"></script>
 </body>
 </html>
