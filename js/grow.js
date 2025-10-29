@@ -7,18 +7,116 @@
 ;(function(){
   'use strict'
 
-  // DOM cache
+  // --- ミュート用の視覚キュー（暗転中に点滅するテキスト）
+  // 調整可能項目:
+  // - fontUrl: フォントファイルパス (例: 'assets/font/Kaisotai-Next-UP-B.ttf')
+  // - fontFamily: @font-face で使うフォント名
+  // - fontSize: 表示時のフォントサイズ（例 '40px'）
+  // - color: テキスト色
+  // - textShadow: テキストシャドウ
+  // - animationDuration: 点滅アニメの周期（ms）
+  // - verticalOffset: 中央からの垂直オフセット（例 '0%'、'-10%' など）
+  // 上書きするには `setMutedCueConfig({ fontSize:'48px', animationDuration:1000 })` のように呼び出してください。
+  const growMutedCueConfig = {
+    fontUrl: 'assets/font/Kaisotai-Next-UP-B.ttf',
+    fontFamily: 'Kaisotai-Next-UP-B',
+    fontSize: '40px',
+    color: '#ffffff',
+    textShadow: '0 0 8px rgba(0,0,0,0.8)',
+    animationDuration: 2000,
+    verticalOffset: '0%'
+  }
+
+  function setMutedCueConfig(overrides){
+    try{
+      if(!overrides) return
+      Object.keys(overrides).forEach(k=>{ try{ if(k in growMutedCueConfig) growMutedCueConfig[k] = overrides[k] }catch(e){} })
+      // re-create style to apply changes
+      const existing = document.getElementById('muted-cue-style')
+      try{ if(existing && existing.parentElement) existing.parentElement.removeChild(existing) }catch(e){}
+      // next showMutedCue call will recreate style with new config
+    }catch(e){}
+  }
+
+  function ensureMutedCueStyle(){
+    try{
+      if(document.getElementById('muted-cue-style')) return
+      const s = document.createElement('style')
+      s.id = 'muted-cue-style'
+      const animMs = Number(growMutedCueConfig.animationDuration) || 1400
+      // note: use @font-face to load the provided font file
+      s.textContent = "@font-face{font-family:'" + growMutedCueConfig.fontFamily + "';src:url('" + growMutedCueConfig.fontUrl + "') format('truetype');font-weight:normal;font-style:normal;font-display:swap;}\n" +
+        "@keyframes mutedCueBlink{0%{opacity:0}50%{opacity:1}100%{opacity:0}}\n" +
+        ".muted-cue{pointer-events:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:100000;color:" + (growMutedCueConfig.color||'#fff') + ";font-family:'" + growMutedCueConfig.fontFamily + "', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;font-size:" + (growMutedCueConfig.fontSize||'40px') + ";letter-spacing:0.04em;text-align:center;text-shadow:" + (growMutedCueConfig.textShadow||'0 0 8px rgba(0,0,0,0.8)') + ";animation:mutedCueBlink " + (animMs/1000) + "s ease-in-out infinite}" +
+        "\n.muted-cue-offset{transform:translate(-50%,-50%) translateY(" + (growMutedCueConfig.verticalOffset||'0%') + ");}"
+      document.head.appendChild(s)
+    }catch(e){}
+  }
+
+  function showMutedCue(text){
+    try{
+      ensureMutedCueStyle()
+      let o = document.getElementById('muted-cue-overlay')
+      if(!o){
+        o = document.createElement('div')
+        o.id = 'muted-cue-overlay'
+        o.className = 'muted-cue muted-cue-offset'
+        o.setAttribute('aria-hidden', 'true')
+        document.body.appendChild(o)
+      }
+      try{ o.textContent = text || '' }catch(e){}
+      try{ o.style.display = 'block' ; o.style.opacity = '1' }catch(e){}
+      return o
+    }catch(e){ return null }
+  }
+
+  function hideMutedCue(){
+    try{
+      const o = document.getElementById('muted-cue-overlay')
+      if(!o) return
+      try{ o.style.opacity = '0' }catch(e){}
+      setTimeout(()=>{ try{ if(o && o.parentElement) o.parentElement.removeChild(o) }catch(e){} }, 250)
+    }catch(e){}
+  }
+
+  // playAudioElement を使って再生中にミュート向けキューを表示するヘルパ
+  async function playAudioWithMuteCue(el, cueText){
+    try{
+      if(!el) return await playAudioElement(el)
+      const cue = showMutedCue(cueText)
+      try{ await playAudioElement(el) }catch(e){}
+      try{ hideMutedCue() }catch(e){}
+    }catch(e){ try{ hideMutedCue() }catch(_){} }
+  }
+
+  // expose setter for external use
+  window.setMutedCueConfig = setMutedCueConfig
+  // --- DOM 要素キャッシュ ---
+  // grow.html 側の要素をここでまとめて参照します。存在しない場合は null になります。
   const screen = document.getElementById('screen')
-  const lightImg = document.getElementById('light-frame')
-  const duryImg = document.getElementById('duryodhana-frame')
+  const bgm = document.getElementById('bgm')
+  const seButton = document.getElementById('se-button')
+  const seBloodDrop = document.getElementById('se-blood-drop')
+  const seHeart = document.getElementById('se-heart')
+  const seCauseBreak1 = document.getElementById('se-cause-break1')
+  const seCauseBreak3 = document.getElementById('se-cause-break3')
+  const seVesselCrack1 = document.getElementById('se-vessel-crack1')
+  const seVesselCrack3 = document.getElementById('se-vessel-crack3')
+  const seTyuubou = document.getElementById('se-tyuubouniiku')
+  const seMasutaNigou = document.getElementById('se-masuta-nigoukou')
+  const seSleepBed = document.getElementById('se-sleep-bed')
+  const seTaisitu = document.getElementById('se-taisitu')
+
+  const lightFrame = document.getElementById('light-frame')
+  const duryodhana = document.getElementById('duryodhana-frame')
   const duryEye = document.getElementById('duryodhana-eye')
   const duryMouth = document.getElementById('duryodhana-mouth')
   const vessel = document.getElementById('vessel')
   const bhimaHand = document.getElementById('bhima-hand')
   const bloodSplash = document.getElementById('blood-splash')
-  const dayLabel = document.getElementById('day-label')
-    
 
+  const dayLabel = document.getElementById('day-label')
+  const gaugeBase = document.getElementById('gauge-base')
   const gaugeKarma = document.getElementById('gauge-karma')
   const gaugeVessel = document.getElementById('gauge-vessel')
   const gaugeMana = document.getElementById('gauge-mana')
@@ -29,49 +127,28 @@
   const btnKitchen = document.getElementById('btn-kitchen')
   const btnFollow = document.getElementById('btn-follow')
   const btnSleep = document.getElementById('btn-sleep')
-
-  // Audio
-  const bgm = document.getElementById('bgm')
-            // debug 出力（削除済み）
-  const seCause1 = document.getElementById('se-cause-break1')
-  const seCause3 = document.getElementById('se-cause-break3')
-  const seVessel1 = document.getElementById('se-vessel-crack1')
-  const seVessel3 = document.getElementById('se-vessel-crack3')
-  // commonly used SE elements that are referenced throughout the file
-  const seButton = document.getElementById('se-button')
-  const seBlood = document.getElementById('se-blood-drop')
-  const seHeart = document.getElementById('se-heart')
-  // day/send related SEs (optional - added in grow.html)
-  const seTyuubou = document.getElementById('se-tyuubouniiku')
-  const seMasuta = document.getElementById('se-masuta-nigoukou')
-  const seSleepBed = document.getElementById('se-sleep-bed')
-  const seNyu = document.getElementById('se-nyuusitu')
-  const seTaisitu = document.getElementById('se-taisitu')
-
-
-  // state
+  // --- ランタイム状態変数（初期値を明示して未定義参照を防ぐ） ---
   let day = 1
   let mana = 2
   let temp = 2
-          
+  let karma = 0
   let vesselLevel = 0
-  // remember whether bgm was playing before a day-send so we can resume after sleep
+  let suppressAutoDialogsUntil = 0
+  // break handling flag for mana overflow during blood action
+  let manaBreakHandled = false
+  // bgm playback state remembered when entering day-send sequences
   let bgmWasPlayingBeforeDaySend = false
-  // busy lock state (initialized early to avoid TDZ when setBusy is called)
   let busy = false
   let _lockedButtons = []
-  // suppress innga (karma) auto-dialog for a short window after day-advance to avoid
-  // immediate anger dialog showing right after sleep/fade transitions
-  let suppressInngaUntil = 0
-  // suppress all automatic dialogs (mana/temp/innga/utuwa) for a short window
-  // after sleep/day-advance to avoid any visual clash with fade transitions.
-  let suppressAutoDialogsUntil = 0
-  // 因果 (karma) の状態: 0 は未表示、1..3 がゲージ段階
-  let karma = 0
-  // internal flag: whether a mana->karma "break" was already handled during the current animation
-  let manaBreakHandled = false
-
-  // animation frames
+  // animation timers
+  let lightTimer = null
+  let duryTimer = null
+  // aliases and animation indices used by startAnims / stopAnims
+  const lightImg = lightFrame
+  const duryImg = duryodhana
+  let lightIndex = 0
+  let duryIndex = 0
+  // frame sequences for simple animations (match start.js conventions)
   const lightFrames = [
     'assets/light/01_light_weak.png',
     'assets/light/02_light_medium.png',
@@ -82,29 +159,15 @@
     'assets/character/wayang/02_duryodhana_wayang_mid.png',
     'assets/character/wayang/03_duryodhana_wayang_bottom.png'
   ]
-  let lightIndex = 0
-  let duryIndex = 0
-  let lightTimer = null
-  let duryTimer = null
-
-  // --- 画像プリロード（ちらつき防止）
-  // ビーマの手（血を与える）3枚と血エフェクト、温め用の手画像を事前に読み込む
-  const PRELOAD_ASSETS = [
-    'assets/bhima_hand/feeding/01_bhima_blood_front.png',
-    'assets/bhima_hand/feeding/02_bhima_blood_mid.png',
-    'assets/bhima_hand/feeding/03_bhima_blood_top.png',
-    'assets/blood/03_blood_fall.png',
-    'assets/blood/01_blood_drop_small.png',
-    'assets/blood/02_blood_drop_large.png',
-    'assets/blood/04_blood_hit.png',
-    'assets/blood/05_blood_splash_1.png',
-    'assets/blood/06_blood_splash_2.png',
-    'assets/blood/07_blood_splash_3.png',
-    'assets/blood/08_blood_splash_done.png',
-  'assets/bhima_hand/warming/01_bhima_warm_front.png',
-    'assets/bhima_hand/warming/02_bhima_warm_mid.png',
-    'assets/bhima_hand/warming/03_bhima_warm_hold.png'
-  ]
+  // SE aliases to match older variable names used throughout the file
+  const seBlood = seBloodDrop
+  const seCause1 = seCauseBreak1
+  const seCause3 = seCauseBreak3
+  const seVessel1 = seVesselCrack1
+  const seVessel3 = seVesselCrack3
+  const seMasuta = seMasutaNigou
+  // ensure PRELOAD_ASSETS exists (some edits removed its declaration in other files)
+  window.PRELOAD_ASSETS = window.PRELOAD_ASSETS || []
   // preload day-send dialog images (hiokuri 01..05)
   PRELOAD_ASSETS.push(
     'assets/ui_text/grow/hiokuri/01.png',
@@ -644,6 +707,27 @@
             }, duration + 20)
           }catch(e){ resolve() }
         }
+
+        // helper: compare two audio elements' sources robustly (attribute or resolved src)
+        function audioSrcEqual(a, b){
+          try{
+            if(!a || !b) return false
+            const aAttr = a.getAttribute && a.getAttribute('src')
+            const bAttr = b.getAttribute && b.getAttribute('src')
+            if(aAttr && bAttr) return String(aAttr) === String(bAttr)
+            // fallback to resolved src comparison
+            if(a.src && b.src) return String(a.src) === String(b.src)
+          }catch(e){}
+          return false
+        }
+
+        function getAudioDurationMs(el){
+          try{
+            if(!el) return 800
+            if(el.duration && isFinite(el.duration) && el.duration > 0) return Math.round(el.duration * 1000)
+          }catch(e){}
+          return 800
+        }
         pre.onload = function(){ doCrossfade() }
         if(pre.complete) doCrossfade()
         // safety fallback
@@ -651,6 +735,8 @@
       }catch(e){ resolve() }
     })
   }
+
+
 
   // Pulse an element's opacity a number of times.
   // times: number of full pulses (fade to minOpacity then back to 1 counts as one)
@@ -1177,11 +1263,12 @@
       }
       // insufficient gauges -> missed_end. Play exit SE then action-specific SE then navigate.
       try{
-        await playAudioElement(seTaisitu)
-      }catch(e){}
-      try{
-        if(target === 'kitchen') await playAudioElement(seTyuubou)
-        else if(target === 'follow') await playAudioElement(seMasuta)
+        // Play only the action-specific SE (user requirement: SE is determined by action/day)
+        if(target === 'kitchen'){
+          await playAudioWithMuteCue(seTyuubou, '厨房へ行く')
+        } else if(target === 'follow'){
+          await playAudioWithMuteCue(seMasuta, 'マスターに同行')
+        }
       }catch(e){}
       try{ if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('missed_end.html') } else { location.href = 'missed_end.html' } }catch(e){ try{ location.href = 'missed_end.html' }catch(_){} }
     }, 450)
@@ -1199,11 +1286,13 @@
       // wait for fade
       await new Promise(r=>setTimeout(r, 450))
       // play exit SE (退室)
-      try{ await playAudioElement(seTaisitu) }catch(e){}
-      // play action-specific SE
       try{
-        if(action === 'kitchen') await playAudioElement(seTyuubou)
-        else if(action === 'follow') await playAudioElement(seMasuta)
+        // Play only the action-specific SE (user requirement: SE is determined by action/day)
+        if(action === 'kitchen'){
+          await playAudioWithMuteCue(seTyuubou, '厨房へ行く')
+        } else if(action === 'follow'){
+          await playAudioWithMuteCue(seMasuta, 'マスターに同行')
+        }
       }catch(e){}
       // NOTE: previously we navigated immediately for day 5 here.
       // Changed behavior: play exit SE + action SE, then fade IN, show day-send dialog,
