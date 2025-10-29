@@ -48,6 +48,8 @@
   let mouthAnimating = false
   // 06 を表示したら以降キャラクターを非表示にするフラグ
   let teHiddenFromSix = false
+  // 送り抜け・多重遷移防止
+  let _animatingBody = false
 
   // CSS の :root に書かれた時間を読み取る小さなヘルパー (例: '600ms' -> 600)
   function readRootMs(varName, fallbackMs){
@@ -256,6 +258,7 @@
   function showImage(i){
     container = container || document.querySelector('[data-ui-text-container]')
     if(!container) return
+    if(_animatingBody) return
     // フェードアウト中の既存画像があればそれをフェードアウトしてから入れ替える
     const prev = container.querySelector('.ui-text-image')
     const doReplace = ()=>{
@@ -267,12 +270,15 @@
       container.appendChild(img)
       // 少し遅らせて show クラスを付けることで CSS トランジションを発火させる
       setTimeout(()=>{ try{ img.classList.remove('hide'); img.classList.add('show') }catch(e){} }, 30)
+      // フェードイン完了で解除
+      try{ const fin = readRootMs('--te-body-fade-in', 600); setTimeout(()=>{ _animatingBody = false }, fin + 60) }catch(e){ setTimeout(()=>{ _animatingBody = false }, 700) }
     }
 
     if(prev){
       try{
         // トランジション終了を待つ。fallback は CSS の --te-body-fade-out
         const waitMs = readRootMs('--te-body-fade-out', 400)
+        _animatingBody = true
         // start hide
         try{ prev.classList.remove('show'); prev.classList.add('hide') }catch(e){}
         // remove after transition
@@ -289,11 +295,13 @@
         setTimeout(()=>{ if(!fired){ try{ prev.removeEventListener && prev.removeEventListener('transitionend', onEnd) }catch(e){} ; remover(); doReplace() } }, waitMs + 80)
       }catch(e){
         try{ container.innerHTML = '' }catch(e){}
+        _animatingBody = true
         doReplace()
       }
     } else {
       // no previous image - just insert
       try{ container.innerHTML = '' }catch(e){}
+      _animatingBody = true
       doReplace()
     }
 
@@ -394,6 +402,7 @@
   function playSE(){ if(!seBtn) return; try{ seBtn.currentTime = 0; seBtn.play().catch(()=>{}) }catch(e){} }
 
   function next(){
+    if(_animatingBody) return
     // 最後の画像なら最終 UI を表示
     if(idx >= uiImages.length - 1){ playSE(); revealFinalUI(); return }
     idx += 1
@@ -489,8 +498,10 @@
 
     if(btnNext){
       btnNext._handler = ()=>{
-        if(_lockedButtons) return
-        lockButtons(800)
+        if(_lockedButtons || _animatingBody) return
+        // 動的ロック（フェード in/out の合計を基準）
+        const lockMs = Math.max(800, readRootMs('--te-body-fade-in',600) + readRootMs('--te-body-fade-out',400) + 80)
+        lockButtons(lockMs)
         playSE(); next()
       }
       btnNext.addEventListener('click', btnNext._handler)

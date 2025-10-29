@@ -30,6 +30,9 @@
   ]
 
   let idx = 0
+  // 送り抜け・多重遷移防止
+  let _animating = false
+  let _navigating = false
 
   // simple button-lock helper to avoid double-activation from rapid clicks
   function lockButtons(ms){
@@ -47,6 +50,8 @@
 
   // 指定インデックスの本文画像を表示する（前の画像はフェードアウトしてから入れ替え）
   function showImage(i){
+    if(_animating) return
+    _animating = true
     if(!container) return
     const nextSrc = uiImages[i] || ''
     const prev = container.querySelector('.ui-text-image')
@@ -59,6 +64,13 @@
       img.width = 1280; img.height = 720
       container.appendChild(img)
       setTimeout(()=>{ try{ img.classList.remove('hide'); img.classList.add('show') }catch(e){} }, 30)
+      // フェードイン終了でアニメ解除
+      try{
+        const cs = getComputedStyle(document.documentElement)
+        const fin = (cs.getPropertyValue('--me-body-fade-in')||'').trim() || '600ms'
+        const toMs = (val)=>{ val=String(val).trim(); if(val.endsWith('ms')) return Math.round(parseFloat(val)); if(val.endsWith('s')) return Math.round(parseFloat(val)*1000); const n=parseFloat(val); return Number.isFinite(n)?Math.round(n):600 }
+        setTimeout(()=>{ _animating = false }, toMs(fin) + 60)
+      }catch(e){ setTimeout(()=>{ _animating = false }, 700) }
     }
     if(prev){
       try{
@@ -119,6 +131,7 @@
   }
 
   function next(){
+    if(_animating || _navigating) return
     playSE()
     if(idx >= uiImages.length - 1){ revealFinal(); return }
     idx += 1
@@ -135,8 +148,11 @@
     showImage(idx)
 
     // ボタンイベント
-  try{ if(btnNext) { btnNext._missed_handler = ()=>{ if(!lockButtons(800)) return; try{ btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, 800) }catch(e){} ; playSE(); next() }; btnNext.addEventListener('click', btnNext._missed_handler) } }catch(e){}
-  try{ if(btnRestart) { btnRestart._missed_handler = ()=>{ if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){} ; playSE(); if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { try{ if(screen) screen.classList.remove('visible') }catch(e){} ;
+  try{ if(btnNext) { btnNext._missed_handler = ()=>{ if(_animating || _navigating) return; 
+    // 動的ロック（fadeOut + fadeIn の合計を目安に）
+    try{ const cs = getComputedStyle(document.documentElement); const fin=(cs.getPropertyValue('--me-body-fade-in')||'').trim()||'600ms'; const fout=(cs.getPropertyValue('--me-body-fade-out')||'').trim()||'400ms'; const toMs=(v)=>{ v=String(v).trim(); if(v.endsWith('ms')) return Math.round(parseFloat(v)); if(v.endsWith('s')) return Math.round(parseFloat(v)*1000); const n=parseFloat(v); return Number.isFinite(n)?Math.round(n):0 }; const lockMs=Math.max(800, toMs(fin)+toMs(fout)+80); if(!lockButtons(lockMs)) return; btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, lockMs) }catch(e){ if(!lockButtons(800)) return }
+    playSE(); next() }; btnNext.addEventListener('click', btnNext._missed_handler) } }catch(e){}
+  try{ if(btnRestart) { btnRestart._missed_handler = ()=>{ if(_navigating) return; _navigating = true; if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){} ; playSE(); if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { try{ if(screen) screen.classList.remove('visible') }catch(e){} ;
         // ルートの --transition-duration を待ってから遷移
         try{
           const v = getComputedStyle(document.documentElement).getPropertyValue('--transition-duration').trim() || '400ms'

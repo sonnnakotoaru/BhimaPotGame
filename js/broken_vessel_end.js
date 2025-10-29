@@ -29,6 +29,9 @@
   let bodyFadeInMs = 600
   let bodyFadeOutMs = 400
   let transitionDurationMs = 400
+  // 送り抜け・多重遷移防止
+  let _animating = false
+  let _navigating = false
 
   // 灯りを徐々に暗くしていく（duration は CSS 変数で制御）
   function fadeOutLight(){
@@ -83,6 +86,8 @@
 
   // 本文画像を表示する。distorted のパターンに合わせる。
   function showImage(i){
+    if(_animating) return
+    _animating = true
     container = container || document.querySelector('[data-ui-text-container]')
     if(!container) return
     container.innerHTML = ''
@@ -93,7 +98,9 @@
     img.width = 1280; img.height = 720
     container.appendChild(img)
     // 少し遅らせてクラスを切り替えることで CSS トランジションを発火させる
-    setTimeout(()=>{ try{ img.classList.remove('hide'); img.classList.add('show') }catch(e){} }, 30)
+  setTimeout(()=>{ try{ img.classList.remove('hide'); img.classList.add('show') }catch(e){} }, 30)
+  // フェードイン完了まで待機
+  setTimeout(()=>{ _animating = false }, bodyFadeInMs + 60)
 
     // 各本文画像の表示に合わせて灯りを段階的に暗くする
     try{
@@ -139,6 +146,7 @@
   }
 
   function next(){
+    if(_animating || _navigating) return
     // If we're already at the last body image, pressing next now should reveal final UI
     if(idx >= uiImages.length - 1){ playSE(); revealFinalUI(); return }
 
@@ -169,8 +177,14 @@
     idx = 0
     showImage(idx)
 
-  if(btnNext){ btnNext._bve_handler = ()=>{ if(!lockButtons(800)) return; try{ btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, 800) }catch(e){}; playSE(); next() }; btnNext.addEventListener('click', btnNext._bve_handler) }
-  if(btnRestart){ btnRestart._bve_handler = ()=>{ if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){}; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else {
+  if(btnNext){ btnNext._bve_handler = ()=>{
+      if(_animating || _navigating) return
+      const lockMs = Math.max(800, bodyFadeOutMs + bodyFadeInMs + 80)
+      if(!lockButtons(lockMs)) return
+      try{ btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, lockMs) }catch(e){}
+      playSE(); next()
+    }; btnNext.addEventListener('click', btnNext._bve_handler) }
+  if(btnRestart){ btnRestart._bve_handler = ()=>{ if(_navigating) return; _navigating = true; if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){}; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else {
         // フォールバック: 画面フェードアウト後に遷移
         try{ const screen = document.getElementById('screen'); if(screen) screen.classList.remove('visible') }catch(e){}
         try{

@@ -35,6 +35,9 @@
   let bgm = null
   let duryFrame = null
   let duryTimer = null
+  // 送り抜け・多重遷移防止用のフラグ
+  let _animating = false
+  let _navigating = false
 
   // simple button-lock helper to avoid double-activation from rapid clicks
   function lockButtons(ms){
@@ -74,6 +77,8 @@
 
   // 本文（UI画像）を画面に出す。プロローグと同じ要領で [data-ui-text-container] に挿入します。
   function showImage(i){
+    if(_animating) return
+    _animating = true
     // image-only mode: insert into container if it exists, otherwise skip
     container = container || document.querySelector('[data-ui-text-container]')
     if(!container) return
@@ -109,6 +114,15 @@
     setTimeout(()=>{
       try{ img.classList.remove('hide'); img.classList.add('show') }catch(e){}
     }, 30)
+    // フェードイン完了まで待ってからアニメ中フラグを解除
+    try{
+      const cs = getComputedStyle(document.documentElement)
+      const fin = (cs.getPropertyValue('--prologue-body-fade-in')||'').trim() || '600ms'
+      const del = (cs.getPropertyValue('--prologue-body-fade-delay')||'').trim() || '0ms'
+      const toMs = (v)=>{ v=String(v).trim(); if(v.endsWith('ms')) return Math.round(parseFloat(v)); if(v.endsWith('s')) return Math.round(parseFloat(v)*1000); const n=parseFloat(v); return Number.isFinite(n)?Math.round(n):0 }
+      const wait = toMs(fin) + toMs(del) + 60
+      setTimeout(()=>{ _animating = false }, wait)
+    }catch(e){ setTimeout(()=>{ _animating = false }, 700) }
   }
 
   // 最後の画面を見せる準備。
@@ -124,6 +138,7 @@
   // 「すすむ」ボタンが押されたときの処理。
   // 最後の画像なら最終UIを出し、そうでなければ次の画像を表示します。
   function next(){
+    if(_animating || _navigating) return
     // すでに最後の画像のときは最終 UI を表示して戻る
     if(idx >= uiImages.length - 1){ playSE(); revealFinalUI(); return }
 
@@ -158,8 +173,22 @@
     showImage(idx)
 
     // ボタンにクリックイベントをつけます。ハンドラはあとで外すために保存します。
-  if(btnNext){ btnNext._dist_handler = ()=>{ if(!lockButtons(800)) return; try{ btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, 800) }catch(e){} ; tryPlayBgm(); next() }; btnNext.addEventListener('click', btnNext._dist_handler) }
-  if(btnRestart){ btnRestart._dist_handler = ()=>{ if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){}; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else {
+  if(btnNext){ btnNext._dist_handler = ()=>{
+      if(_animating || _navigating) return
+      try{
+        const cs = getComputedStyle(document.documentElement)
+        const fin = (cs.getPropertyValue('--prologue-body-fade-in')||'').trim() || '600ms'
+        const fout = (cs.getPropertyValue('--prologue-body-fade-out')||'').trim() || '400ms'
+        const del = (cs.getPropertyValue('--prologue-body-fade-delay')||'').trim() || '0ms'
+        const toMs = (v)=>{ v=String(v).trim(); if(v.endsWith('ms')) return Math.round(parseFloat(v)); if(v.endsWith('s')) return Math.round(parseFloat(v)*1000); const n=parseFloat(v); return Number.isFinite(n)?Math.round(n):0 }
+        const lockMs = Math.max(800, toMs(fin)+toMs(fout)+toMs(del)+80)
+        if(!lockButtons(lockMs)) return
+        btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true')
+        setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, lockMs)
+      }catch(e){ if(!lockButtons(800)) return }
+      tryPlayBgm(); next()
+    }; btnNext.addEventListener('click', btnNext._dist_handler) }
+  if(btnRestart){ btnRestart._dist_handler = ()=>{ if(_navigating) return; _navigating = true; if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){}; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else {
         // フォールバック: 画面全体をフェードアウトしてから遷移
         try{ const screen = document.getElementById('screen'); if(screen) screen.classList.remove('visible') }catch(e){}
         try{
