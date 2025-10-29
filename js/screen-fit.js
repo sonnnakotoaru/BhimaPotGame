@@ -30,9 +30,13 @@
     try{
       const pads = readBodyPadding()
       const vp = getViewportSize()
-      const availW = Math.max(1, vp.w - PAD - pads.left - pads.right)
-      const availH = Math.max(1, vp.h - PAD - pads.top - pads.bottom)
-      let scale = Math.min(availW / DESIGN_W, availH / DESIGN_H, 1)
+  const availW = Math.max(1, vp.w - PAD - pads.left - pads.right)
+  const availH = Math.max(1, vp.h - PAD - pads.top - pads.bottom)
+  // Prefer integer CSS pixel sizes for the scaled canvas to keep pixel art crisp.
+  // Compute candidate scales that yield integer-sized width/height after scaling.
+  const scaleW = Math.floor(availW) / DESIGN_W
+  const scaleH = Math.floor(availH) / DESIGN_H
+  let scale = Math.min(scaleW, scaleH, 1)
       if(!isFinite(scale) || scale <= 0) scale = 0.1
       document.documentElement.style.setProperty('--screen-scale', String(scale))
       document.documentElement.style.setProperty('--screen-fit-w', String(availW / DESIGN_W))

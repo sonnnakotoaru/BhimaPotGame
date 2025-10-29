@@ -4,9 +4,9 @@
     ・育成画面（grow）の見た目とボタン位置を決めるファイルです。
     ・ボタンの位置は1280x720を基準にpxで指定しています。変えたいときは :root の値を直してください。
 */
-/* ページ全体のリセットと中央寄せ（画面を中央に揃えるため） */
+/* ページ全体のリセット（背景を黒で固定）と safe-area 対応 */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
-body{display:flex;align-items:center;justify-content:center}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);box-sizing:border-box}
 
 
 :root{
@@ -46,19 +46,14 @@ body{display:flex;align-items:center;justify-content:center}
 /* .btn-locked { opacity: 0.9; } */
 
 /* --- 全体レイアウト（画面領域、背景、レイヤー） --- */
-/* #screen は全画面に広がり、フェード用のターゲットにも使います */
-#screen{position:relative;width:1280px;height:720px;box-sizing:border-box;opacity:0;--transition-duration:400ms;transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1);overflow:hidden;background:transparent}
+/* #screen はビューポート中央に固定し、visualViewport の変化でも位置がぶれないようにする */
+#screen{position:fixed;left:50%;top:50%;width:1280px;height:720px;box-sizing:border-box;opacity:0;--transition-duration:400ms;transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1);overflow:hidden;background:transparent;transform-origin:center center;transform: translate(-50%,-50%) scale(var(--screen-scale,1));}
 #screen.visible{opacity:1}
 
-/* 背景画像要素。.bg は必ず最背面に置き、cover で全体を覆います */
-.bg{
-  position:absolute;
-  left:0; right:0; top:0; bottom:0;
-  background-position:center center;
-  background-repeat:no-repeat;
-  background-size:cover;
-  z-index:0;
-}
+/* 背景画像要素
+   - 画面設計は 1280x720 固定。アートルールに従い原寸表示（拡大縮小しない）。
+   - 必ず最背面。 */
+.bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-position:center center;background-repeat:no-repeat;background-size:1280px 720px;z-index:0;image-rendering:pixelated}
 
 /* シーン要素は重ね順を持ち、ボタンなどは上に来るようにする */
 .scene-layer{
@@ -87,8 +82,8 @@ body{display:flex;align-items:center;justify-content:center}
   height:720px;
   max-width:none;
   max-height:none;
-  object-fit:cover; /* 画像をキャンバス全体に覆わせる */
-  image-rendering:auto; /* 補間はブラウザ既定（綺麗に表示）を優先 */
+  /* 原寸 1280x720 でそのまま表示（拡大縮小しない） */
+  image-rendering:pixelated;
   z-index:70; /* grow.html 内の意図している重ね順に合わせる */
   pointer-events:none; /* セリフはインタラクティブにしない */
   display:none; /* JS で表示/非表示を切り替える */
@@ -102,18 +97,16 @@ body{display:flex;align-items:center;justify-content:center}
 /* UI ボタンはクリック可能にするため pointer-events を有効にする */
 .scene-layer .btn-ui, .btn-ui{ pointer-events:auto; cursor:pointer; }
 .btn-ui:active{filter:brightness(1.5)}
+/* 共通: 一時的に無効化したい場合に使う */
+.btn-ui.disabled{ pointer-events:none; cursor:default }
 
 /* 小さい画面向け: transform:scale() を使って #screen を縮小し、内部座標系を保つ。
    これによりボタン等はキャンバス内に固定され、ウィンドウサイズの影響を受けにくくなります。 */
 @media (max-width: 1280px){
-  :root{
-    --screen-fit-w: calc((100vw - 20px) / 1280);
-    --screen-fit-h: calc((100vh - 20px) / 720);
-  }
-  #screen{ width:1280px; height:720px; transform: scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
+  :root{ --screen-fit-w: calc((100vw - 20px) / 1280); --screen-fit-h: calc((100vh - 20px) / 720); }
+  #screen{ width:1280px; height:720px; transform: translate(-50%,-50%) scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
   .bg, .scene-layer{ width:1280px; height:720px }
   .scene-layer img, .btn-ui{ max-width:none; height:auto }
-
 }
 
 /* --- shake アニメーション（ダイアログ / ゲージ 揺らしに使用） --- */

@@ -61,7 +61,7 @@ body, img { -webkit-user-select: none; -ms-user-select: none; user-select: none;
 /* 背景画像を置く場所です。いつも一番後ろに置かれます。
   画像は1280×720の原寸で表示します。
 */
-.bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-image: url('../assets/bg/01_bg_wayang_normal.png');background-repeat:no-repeat;background-position:center center;background-size:1280px 720px;z-index:0}
+.bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-image: url('../assets/bg/01_bg_wayang_normal.png');background-repeat:no-repeat;background-position:center center;background-size:1280px 720px;z-index:0;image-rendering:pixelated}
 
 /* scene-layer はキャラやボタンなどを重ねる場所です。
   pointer-events:none にしておくと、背景の上に置かれていても
@@ -71,9 +71,17 @@ body, img { -webkit-user-select: none; -ms-user-select: none; user-select: none;
 
 .scene-layer img{position:absolute;top:0;left:0;width:auto;height:auto;image-rendering:pixelated}
 
+/* タイトル/本文のフェード用（opacity のみで演出） */
+#scene-title, #scene-body{
+  opacity: var(--notice-body-opacity-start);
+  transition: opacity var(--notice-body-fade-in) ease var(--notice-body-fade-delay);
+}
+
 /* ボタンの見た目と操作の設定：クリックできるようにするよ */
 .btn-ui{pointer-events:auto;cursor:pointer}
 .btn-ui:active{filter:brightness(1.5)}
+/* 連打防止用の無効化クラス */
+.btn-ui.disabled{pointer-events:none;cursor:default}
 
 /* すすむボタンの位置: 変数で位置を決めているので、簡単に動かせます */
 #btn-susumu{pointer-events:auto;left:var(--btn-susumu-left);top:var(--btn-susumu-top);cursor:pointer}

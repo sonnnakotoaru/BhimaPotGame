@@ -14,9 +14,19 @@
 // ページが全部読み込まれたら画面をフェードインさせるよ
 window.addEventListener('load', () => {
   const screen = document.getElementById('screen');
+  const title = document.getElementById('scene-title');
+  const body = document.getElementById('scene-body');
+  // CSS 変数を読む小さなヘルパー
+  const getRootVar = (name, fallback) => { try{ const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fallback }catch(e){ return fallback } }
   if (!screen) return;
   // 少しだけ待ってから .visible を付けるとフェードインして見えるよ
-  requestAnimationFrame(() => setTimeout(() => screen.classList.add('visible'), 20));
+  requestAnimationFrame(() => setTimeout(() => {
+    screen.classList.add('visible');
+    // タイトル/本文もフェードイン（opacity のみ）
+    const endOp = getRootVar('--notice-body-opacity-end','1');
+    if(title) title.style.opacity = endOp;
+    if(body) body.style.opacity = endOp;
+  }, 20));
 });
 
 (function () {
@@ -24,6 +34,7 @@ window.addEventListener('load', () => {
   const se = document.getElementById('se-button');
   const screen = document.getElementById('screen');
   const sceneBody = document.getElementById('scene-body');
+  const sceneTitle = document.getElementById('scene-title');
 
   if (!btn) return;
 
@@ -48,7 +59,14 @@ window.addEventListener('load', () => {
   // 3) フェードアウトして start.html に移動する
   async function activate() {
     // prevent double activation
-    try{ if(btn._locked) return; btn._locked = true; setTimeout(()=>{ btn._locked = false }, 1200) }catch(e){}
+    try{
+      if(btn._locked) return;
+      btn._locked = true;
+      btn.classList.add('disabled');
+      btn.setAttribute('aria-disabled','true');
+      if(screen) screen.style.pointerEvents = 'none';
+      setTimeout(()=>{ btn._locked = false }, 2000)
+    }catch(e){}
     btn.classList.add('pressed')
     playSE()
 
@@ -76,7 +94,9 @@ window.addEventListener('load', () => {
         const toMs = (v, fallback) => { if(!v) return fallback||0; v=String(v).trim(); if(v.endsWith('ms')) return Math.round(parseFloat(v)); if(v.endsWith('s')) return Math.round(parseFloat(v)*1000); const n=parseFloat(v); return Number.isFinite(n)?Math.round(n):(fallback||0) }
         const fadeOutStr = getRootVar('--notice-body-fade-out','400ms')
         const fadeOutMs = toMs(fadeOutStr,400)
-        if(sceneBody){ sceneBody.style.transition = `opacity ${fadeOutStr} ease`; sceneBody.style.opacity = getRootVar('--notice-body-opacity-start','0') }
+        const startOp = getRootVar('--notice-body-opacity-start','0')
+        if(sceneBody){ sceneBody.style.transition = `opacity ${fadeOutStr} ease`; sceneBody.style.opacity = startOp }
+        if(sceneTitle){ sceneTitle.style.transition = `opacity ${fadeOutStr} ease`; sceneTitle.style.opacity = startOp }
         setTimeout(()=>{
           if (screen) screen.classList.remove('visible')
           setTimeout(()=> { location.href = 'start.html' }, toMs(getRootVar('--transition-duration','400ms'),400))
@@ -86,7 +106,7 @@ window.addEventListener('load', () => {
   }
 
   btn.addEventListener('click', (e) => { e.preventDefault(); activate(); });
-  btn.addEventListener('pointerdown', () => btn.classList.add('pressed'));
+  btn.addEventListener('pointerdown', () => { if(btn._locked) return; btn.classList.add('pressed') });
   btn.addEventListener('pointerup', () => btn.classList.remove('pressed'));
   btn.addEventListener('pointercancel', () => btn.classList.remove('pressed'));
 })();

@@ -169,8 +169,16 @@
     idx = 0
     showImage(idx)
 
-  if(btnNext){ btnNext._bve_handler = ()=>{ if(!lockButtons(600)) return; playSE(); next() }; btnNext.addEventListener('click', btnNext._bve_handler) }
-  if(btnRestart){ btnRestart._bve_handler = ()=>{ if(!lockButtons(800)) return; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { location.href = 'start.html' } }; btnRestart.addEventListener('click', btnRestart._bve_handler) }
+  if(btnNext){ btnNext._bve_handler = ()=>{ if(!lockButtons(800)) return; try{ btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, 800) }catch(e){}; playSE(); next() }; btnNext.addEventListener('click', btnNext._bve_handler) }
+  if(btnRestart){ btnRestart._bve_handler = ()=>{ if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){}; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else {
+        // フォールバック: 画面フェードアウト後に遷移
+        try{ const screen = document.getElementById('screen'); if(screen) screen.classList.remove('visible') }catch(e){}
+        try{
+          const v = (getComputedStyle(document.documentElement).getPropertyValue('--transition-duration')||'').trim() || '400ms'
+          const toMs = (val)=>{ val=String(val).trim(); if(val.endsWith('ms')) return Math.round(parseFloat(val)); if(val.endsWith('s')) return Math.round(parseFloat(val)*1000); const n=parseFloat(val); return Number.isFinite(n)?Math.round(n):400 }
+          setTimeout(()=>{ location.href = 'start.html' }, toMs(v))
+        }catch(e){ setTimeout(()=>{ location.href = 'start.html' }, 400) }
+      } }; btnRestart.addEventListener('click', btnRestart._bve_handler) }
 
     const screen = document.getElementById('screen'); if(screen) screen.classList.add('visible')
   }

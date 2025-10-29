@@ -149,7 +149,12 @@
   if(btnBegin){
     btnBegin.addEventListener('click', (e)=>{
       e.preventDefault()
-      try{ if(btnBegin._locked) return; btnBegin._locked = true; setTimeout(()=>{ btnBegin._locked = false }, 1200) }catch(e){}
+      try{
+        if(btnBegin._locked) return; btnBegin._locked = true;
+        btnBegin.classList.add('disabled'); btnBegin.setAttribute('aria-disabled','true')
+        if(screen) screen.style.pointerEvents = 'none'
+        setTimeout(()=>{ btnBegin._locked = false }, 2000)
+      }catch(e){}
       try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
       fadeOutThen(()=>{ stopAnims(); location.href = 'prologue.html' })
     })
@@ -158,7 +163,12 @@
   if(btnExit){
     btnExit.addEventListener('click', (e)=>{
       e.preventDefault()
-      try{ if(btnExit._locked) return; btnExit._locked = true; setTimeout(()=>{ btnExit._locked = false }, 800) }catch(e){}
+      try{
+        if(btnExit._locked) return; btnExit._locked = true;
+        btnExit.classList.add('disabled'); btnExit.setAttribute('aria-disabled','true')
+        if(screen) screen.style.pointerEvents = 'none'
+        setTimeout(()=>{ btnExit._locked = false }, 2000)
+      }catch(e){}
       try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
       alert('ゲームを終了するには画面を閉じて下さい')
     })
@@ -167,7 +177,12 @@
   if(btnCredit){
     btnCredit.addEventListener('click', (e)=>{
       e.preventDefault()
-      try{ if(btnCredit._locked) return; btnCredit._locked = true; setTimeout(()=>{ btnCredit._locked = false }, 1200) }catch(e){}
+      try{
+        if(btnCredit._locked) return; btnCredit._locked = true;
+        btnCredit.classList.add('disabled'); btnCredit.setAttribute('aria-disabled','true')
+        if(screen) screen.style.pointerEvents = 'none'
+        setTimeout(()=>{ btnCredit._locked = false }, 2000)
+      }catch(e){}
       try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
       fadeOutThen(()=>{ stopAnims(); location.href = 'credit.html' })
     })

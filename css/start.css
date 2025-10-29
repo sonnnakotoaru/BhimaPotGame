@@ -38,7 +38,7 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 }
 #screen.visible{opacity:1}
 
-.bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-repeat:no-repeat;background-position:center center;background-size:1280px 720px;z-index:0}
+.bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-repeat:no-repeat;background-position:center center;background-size:1280px 720px;z-index:0;image-rendering:pixelated}
 
 .scene-layer{position:absolute;left:0;top:0;width:1280px;height:720px;z-index:1;pointer-events:none}
 
@@ -46,6 +46,8 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 
 .btn-ui{pointer-events:auto;cursor:pointer}
 .btn-ui:active{filter:brightness(1.5)}
+/* 連打防止用: 無効状態の見た目（操作不可にする） */
+.btn-ui.disabled{ pointer-events:none; cursor:default }
 
 #btn-begin{left:var(--btn-begin-left);top:var(--btn-begin-top)}
 #btn-exit{left:var(--btn-exit-left);top:var(--btn-exit-top)}

@@ -54,7 +54,10 @@
       const fadeOutStr = getRootVar('--credit-body-fade-out', '400ms')
       const fadeOutMs = toMs(fadeOutStr, 400)
       const creditBody = document.getElementById('credit-body')
-      if(creditBody){ creditBody.style.transition = `opacity ${fadeOutStr} ease`; creditBody.style.opacity = getRootVar('--credit-body-opacity-start', '0') }
+      const creditTitle = document.getElementById('credit-title')
+      const startOp = getRootVar('--credit-body-opacity-start', '0')
+      if(creditBody){ creditBody.style.transition = `opacity ${fadeOutStr} ease`; creditBody.style.opacity = startOp }
+      if(creditTitle){ creditTitle.style.transition = `opacity ${fadeOutStr} ease`; creditTitle.style.opacity = startOp }
       // 本文が消えるのを待ってから画面全体をフェードアウト
       setTimeout(()=>{
         if(screen && screen.classList) screen.classList.remove('visible')
@@ -83,18 +86,21 @@
       if(screen && screen.classList) requestAnimationFrame(()=> setTimeout(()=> screen.classList.add('visible'), 20))
     }catch(e){ /* ignore */ }
 
-    // credit-body をフェードインする（CSS 変数を参照）
+    // タイトルと本文をフェードイン（CSS 変数を参照）
     try{
       const creditBody = document.getElementById('credit-body')
-      if(creditBody){
+      const creditTitle = document.getElementById('credit-title')
+      if(creditBody || creditTitle){
         const fadeInStr = getRootVar('--credit-body-fade-in','600ms')
         const delayStr = getRootVar('--credit-body-fade-delay','120ms')
         const startOp = getRootVar('--credit-body-opacity-start','0')
         const endOp = getRootVar('--credit-body-opacity-end','1')
-        // 初期値とトランジションを設定してから end に持っていく
-        creditBody.style.opacity = startOp
-        creditBody.style.transition = `opacity ${fadeInStr} ease ${delayStr}`
-        requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ creditBody.style.opacity = endOp }) })
+        const prep = (el)=>{ if(!el) return; el.style.opacity = startOp; el.style.transition = `opacity ${fadeInStr} ease ${delayStr}` }
+        prep(creditBody); prep(creditTitle)
+        requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+          if(creditBody) creditBody.style.opacity = endOp
+          if(creditTitle) creditTitle.style.opacity = endOp
+        }) })
       }
     }catch(e){}
 
@@ -102,7 +108,7 @@
   }
 
   // ボタンがあればクリック時の動きを登録するよ
-  if(btnBack) btnBack.addEventListener('click', e=>{ e && e.preventDefault(); if(!lockButtons(800)) return; goBack() })
+  if(btnBack) btnBack.addEventListener('click', e=>{ e && e.preventDefault(); if(!lockButtons(1000)) return; try{ btnBack.classList.add('disabled'); btnBack.setAttribute('aria-disabled','true'); if(screen) screen.style.pointerEvents='none' }catch(e){}; goBack() })
 
   // DOM の読み込みが終わったら start を呼ぶ
   if(document.readyState === 'loading'){

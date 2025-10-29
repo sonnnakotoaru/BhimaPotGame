@@ -27,6 +27,8 @@
 	]
 
 	let idx = 0 // 今どの画像を見ているか
+	// 遷移中フラグ（フェードアウト→画面遷移の間は入力を無視）
+	let _navigating = false
 
 	// simple button-lock helper to avoid double-activation from rapid clicks
 	function lockButtons(ms){
@@ -112,12 +114,27 @@
 
 	// 次へ押したときの処理
 	function next(){
-		// 最後の画像なら育成画面へ移動
+		// アニメ中や遷移中は入力を無視して、インデックスの不整合を防ぐ
+		if(_prologue_animating || _navigating) return
+		// 最後の画像なら、本文をフェードアウト→画面フェード→遷移
 		if(idx >= uiImages.length - 1){
 			playSE()
-			// ゆっくりフェードアウトしてから移動する
-			if(screen && screen.classList) screen.classList.remove('visible')
-			setTimeout(()=>{ window.location.href = 'grow.html' }, 400)
+			try{
+				_navigating = true
+				const fadeOutStr = getRootVar('--prologue-body-fade-out', '400ms')
+				const startOp = parseFloat(getRootVar('--prologue-body-opacity-start', '0')) || 0
+				const fadeOutMs = toMs(fadeOutStr, 400)
+				if(prologueBody){ prologueBody.style.transition = `opacity ${fadeOutStr} ease`; prologueBody.style.opacity = startOp }
+				// 本文フェードアウト完了後に画面全体をフェードアウト
+				setTimeout(()=>{
+					if(screen && screen.classList) screen.classList.remove('visible')
+					const screenFadeMs = toMs(getRootVar('--transition-duration','400ms'), 400)
+					setTimeout(()=>{ window.location.href = 'grow.html' }, screenFadeMs)
+				}, fadeOutMs + 20)
+			}catch(e){
+				if(screen && screen.classList) screen.classList.remove('visible')
+				setTimeout(()=>{ window.location.href = 'grow.html' }, 400)
+			}
 			return
 		}
 		// 次の画像へ
@@ -135,7 +152,22 @@
 	}
 
 	// ボタンに処理を付ける
-	if(btnNext) btnNext.addEventListener('click', e=>{ e && e.preventDefault(); if(!lockButtons(700)) return; next() })
+	// ロック時間は CSS のフェード時間（out+delay+in）から動的に計算し、抜けを防止
+	if(btnNext) btnNext.addEventListener('click', e=>{
+		e && e.preventDefault()
+		// 進行中なら即無視（多重インクリメント防止）
+		if(_prologue_animating || _navigating) return
+		try{
+			const fadeInStr = getRootVar('--prologue-body-fade-in', '600ms')
+			const fadeOutStr = getRootVar('--prologue-body-fade-out', '400ms')
+			const delayStr = getRootVar('--prologue-body-fade-delay', '0ms')
+			const lockMs = Math.max(900, toMs(fadeOutStr,400) + toMs(delayStr,0) + toMs(fadeInStr,600) + 80)
+			if(!lockButtons(lockMs)) return
+			btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true')
+			setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, lockMs)
+		}catch(e){ if(!lockButtons(900)) return }
+		next()
+	})
 
 	// DOM 準備ができたら start を走らせる
 	if(document.readyState === 'loading'){

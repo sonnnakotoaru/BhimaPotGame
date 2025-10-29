@@ -23,7 +23,7 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 #screen{position:fixed;left:50%;top:50%;width:var(--screen-width);height:var(--screen-height);box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) ease;transform-origin:center center;transform: translate(-50%,-50%) scale(var(--screen-scale,1));}
 #screen.visible{opacity:1}
 
-.bg{position:absolute;inset:0;width:100%;height:100%;background-repeat:no-repeat;background-size:cover;background-position:center center;z-index:10;pointer-events:none}
+.bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-repeat:no-repeat;background-size:1280px 720px;background-position:center center;z-index:10;pointer-events:none;image-rendering:pixelated}
 .scene-layer{position:absolute;left:0;top:0;width:100%;height:100%;z-index:20;pointer-events:none}
 
 /* 灯り: 画面を覆うように置いておく */
@@ -40,6 +40,8 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 
 .btn-ui{position:absolute;transform:none;pointer-events:auto;user-select:none;-webkit-user-drag:none;width:auto;height:auto;z-index:60;cursor:pointer}
 .btn-ui:active{filter:brightness(1.5)}
+/* 連打防止用: 無効状態 */
+.btn-ui.disabled{ pointer-events:none; cursor:default }
 #btn-next{left:var(--btn-next-left);top:var(--btn-next-top)}
 #btn-restart{left:var(--btn-restart-left);top:var(--btn-restart-top)}
 

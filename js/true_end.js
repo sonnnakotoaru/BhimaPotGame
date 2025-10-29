@@ -238,13 +238,13 @@
       if(_lockedButtons) return
       _lockedButtons = true
       // 視覚的に入力を遮断する（img ボタンのため pointer-events を制御）
-      try{ if(btnNext) { btnNext.style.pointerEvents = 'none'; btnNext.tabIndex = -1 } }catch(e){}
-      try{ if(btnRestart) { btnRestart.style.pointerEvents = 'none'; btnRestart.tabIndex = -1 } }catch(e){}
+      try{ if(btnNext) { btnNext.style.pointerEvents = 'none'; btnNext.tabIndex = -1; btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true') } }catch(e){}
+      try{ if(btnRestart) { btnRestart.style.pointerEvents = 'none'; btnRestart.tabIndex = -1; btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') } }catch(e){}
       const t = typeof ms === 'number' ? ms : 600
       setTimeout(()=>{
         try{ _lockedButtons = false }catch(e){}
-        try{ if(btnNext) { btnNext.style.pointerEvents = 'auto'; btnNext.tabIndex = 0 } }catch(e){}
-        try{ if(btnRestart) { btnRestart.style.pointerEvents = 'auto'; btnRestart.tabIndex = -1 } }catch(e){}
+        try{ if(btnNext) { btnNext.style.pointerEvents = 'auto'; btnNext.tabIndex = 0; btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') } }catch(e){}
+        try{ if(btnRestart) { btnRestart.style.pointerEvents = 'auto'; btnRestart.tabIndex = -1; btnRestart.classList.remove('disabled'); btnRestart.removeAttribute('aria-disabled') } }catch(e){}
       }, t)
     }catch(e){}
   }
@@ -490,7 +490,7 @@
     if(btnNext){
       btnNext._handler = ()=>{
         if(_lockedButtons) return
-        lockButtons(600)
+        lockButtons(800)
         playSE(); next()
       }
       btnNext.addEventListener('click', btnNext._handler)
@@ -498,8 +498,19 @@
     if(btnRestart){
       btnRestart._handler = ()=>{
         if(_lockedButtons) return
-        lockButtons(1000)
-        if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { location.href = 'start.html' }
+        lockButtons(1200)
+        if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else {
+          // フォールバック: 画面フェードアウト（true_end は独自の変数を優先）
+          try{ const screen = document.getElementById('screen'); if(screen) screen.classList.remove('visible') }catch(e){}
+          try{
+            const cs = getComputedStyle(document.documentElement)
+            const pref = (cs.getPropertyValue('--te-screen-fade-out')||'').trim()
+            const base = (cs.getPropertyValue('--transition-duration')||'').trim() || '400ms'
+            const v = pref || base
+            const toMs = (val)=>{ val=String(val).trim(); if(val.endsWith('ms')) return Math.round(parseFloat(val)); if(val.endsWith('s')) return Math.round(parseFloat(val)*1000); const n=parseFloat(val); return Number.isFinite(n)?Math.round(n):400 }
+            setTimeout(()=>{ location.href = 'start.html' }, toMs(v))
+          }catch(e){ setTimeout(()=>{ location.href = 'start.html' }, 400) }
+        }
       }
       btnRestart.addEventListener('click', btnRestart._handler)
     }

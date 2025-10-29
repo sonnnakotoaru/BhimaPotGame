@@ -158,8 +158,16 @@
     showImage(idx)
 
     // ボタンにクリックイベントをつけます。ハンドラはあとで外すために保存します。
-  if(btnNext){ btnNext._dist_handler = ()=>{ if(!lockButtons(600)) return; tryPlayBgm(); next() }; btnNext.addEventListener('click', btnNext._dist_handler) }
-  if(btnRestart){ btnRestart._dist_handler = ()=>{ if(!lockButtons(800)) return; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { location.href = 'start.html' } }; btnRestart.addEventListener('click', btnRestart._dist_handler) }
+  if(btnNext){ btnNext._dist_handler = ()=>{ if(!lockButtons(800)) return; try{ btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, 800) }catch(e){} ; tryPlayBgm(); next() }; btnNext.addEventListener('click', btnNext._dist_handler) }
+  if(btnRestart){ btnRestart._dist_handler = ()=>{ if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){}; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else {
+        // フォールバック: 画面全体をフェードアウトしてから遷移
+        try{ const screen = document.getElementById('screen'); if(screen) screen.classList.remove('visible') }catch(e){}
+        try{
+          const v = (getComputedStyle(document.documentElement).getPropertyValue('--transition-duration')||'').trim() || '400ms'
+          const toMs = (val)=>{ val=String(val).trim(); if(val.endsWith('ms')) return Math.round(parseFloat(val)); if(val.endsWith('s')) return Math.round(parseFloat(val)*1000); const n=parseFloat(val); return Number.isFinite(n)?Math.round(n):400 }
+          setTimeout(()=>{ location.href = 'start.html' }, toMs(v))
+        }catch(e){ setTimeout(()=>{ location.href = 'start.html' }, 400) }
+      } }; btnRestart.addEventListener('click', btnRestart._dist_handler) }
 
     // 画面全体をふわっと表示
     const screen = document.getElementById('screen'); if(screen) screen.classList.add('visible')

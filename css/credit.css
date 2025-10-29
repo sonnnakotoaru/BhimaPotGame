@@ -23,7 +23,7 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 #screen.visible{opacity:1}
 
 /* 背景: ここで画像を指定します（1280x720 の原寸） */
-.bg{position:absolute;left:0;top:0;width:100%;height:100%;background-image:url('../assets/bg/01_bg_wayang_normal.png');background-repeat:no-repeat;background-position:center center;background-size:100% 100%;z-index:0;pointer-events:none}
+.bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-image:url('../assets/bg/01_bg_wayang_normal.png');background-repeat:no-repeat;background-position:center center;background-size:1280px 720px;z-index:0;pointer-events:none;image-rendering:pixelated}
 
 /* scene-layer はキャラやボタンなどを重ねる場所です。
 	pointer-events:none にしておくと、背景の上に置かれていても
@@ -36,9 +36,19 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 
 .scene-layer img{position:absolute;top:0;left:0;width:auto;height:auto;image-rendering:pixelated}
 
+/* テキスト画像のフェード用（タイトル/本文） */
+#credit-title, #credit-body{
+	opacity: var(--credit-body-opacity-start);
+	transition: opacity var(--credit-body-fade-in) ease var(--credit-body-fade-delay);
+}
+.show{ opacity: var(--credit-body-opacity-end); transition: opacity var(--credit-body-fade-in) ease var(--credit-body-fade-delay) }
+.hide{ opacity: var(--credit-body-opacity-start); transition: opacity var(--credit-body-fade-out) ease }
+
 /* ボタンの見た目と操作の設定：クリックできるようにするよ */
 .btn-ui{pointer-events:auto;cursor:pointer}
 .btn-ui:active{filter:brightness(1.5)}
+/* 連打防止用: 無効状態 */
+.btn-ui.disabled{ pointer-events:none; cursor:default }
 
 /* 戻るボタン: 位置は変数で調整できるようにする
 	※ ユーザー指定: ボタンはキャンバス上で原寸表示する（幅を%で指定しない） */
