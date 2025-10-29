@@ -15,6 +15,8 @@
   --btn-susumu-left: 1020px; 
   --btn-susumu-top: 600px;   
   --transition-duration: 400ms;
+  /* runtime scale applied by js/screen-fit.js */
+  --screen-scale: 1;
 
   /* 本文画像のフェード調整（JS から参照されます） */
   --notice-body-fade-in: 600ms;
@@ -38,7 +40,7 @@ body, img { -webkit-user-select: none; -ms-user-select: none; user-select: none;
   幅1280×高さ720で固定して、最初は透明にしておいて
   表示したいときに .visible を付けてフェードインさせます。
 */
-#screen{position:relative;width:1280px;height:720px;box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1)}
+#screen{position:relative;width:1280px;height:720px;box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1);transform-origin:center center;transform: scale(var(--screen-scale,1));}
 #screen.visible{opacity:1}
 
 /* 背景画像を置く場所です。いつも一番後ろに置かれます。
@@ -72,8 +74,10 @@ body, img { -webkit-user-select: none; -ms-user-select: none; user-select: none;
   .bg, .scene-layer{ width:1280px; height:720px }
   .scene-layer img, .btn-ui{ max-width:none; height:auto }
   /* Small-screen touch targets: make buttons easier to tap on phones */
-  @media (max-width: 480px){
-    .btn-ui{ transform-origin:center center; transform: scale(1.08); }
+  @media (max-width: 1280px){
+    /* scale is handled by js/screen-fit.js which writes --screen-scale */
+    #screen{ width:1280px; height:720px }
+    .bg, .scene-layer{ width:1280px; height:720px }
+    .scene-layer img, .btn-ui{ max-width:none; height:auto }
+    /* 生成テキストコンテナは削除済み */
   }
-  /* 生成テキストコンテナは削除済み */
-}
