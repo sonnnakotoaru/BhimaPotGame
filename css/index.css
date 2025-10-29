@@ -30,6 +30,10 @@
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
 body{display:flex;align-items:center;justify-content:center}
 
+/* Mobile / touch friendliness tweaks */
+body, img { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
+.btn-ui{ touch-action: manipulation; -webkit-tap-highlight-color: rgba(0,0,0,0); }
+
 /* #screen はゲームの『キャンバス』です。
   幅1280×高さ720で固定して、最初は透明にしておいて
   表示したいときに .visible を付けてフェードインさせます。
@@ -67,5 +71,9 @@ body{display:flex;align-items:center;justify-content:center}
   #screen{ width:1280px; height:720px; transform: scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
   .bg, .scene-layer{ width:1280px; height:720px }
   .scene-layer img, .btn-ui{ max-width:none; height:auto }
+  /* Small-screen touch targets: make buttons easier to tap on phones */
+  @media (max-width: 480px){
+    .btn-ui{ transform-origin:center center; transform: scale(1.08); }
+  }
   /* 生成テキストコンテナは削除済み */
 }
