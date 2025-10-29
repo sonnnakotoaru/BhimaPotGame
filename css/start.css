@@ -19,10 +19,23 @@
   --text-fade-out: 0.8s;
 }
 
+/* 画面外（余白）も常に真っ黒にする＋余白やスクロールを抑止 */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
-body{display:flex;align-items:center;justify-content:center}
+/* notch/safe-area による物理切り欠きでコンテンツが欠けないようパディングを適用 */
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);box-sizing:border-box}
 
-#screen{position:relative;width:1280px;height:720px;box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1)}
+#screen{
+  position:fixed;
+  left:50%;
+  top:50%;
+  width:1280px;
+  height:720px;
+  box-sizing:border-box;
+  opacity:0;
+  transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1);
+  transform-origin:center center;
+  transform: translate(-50%,-50%) scale(var(--screen-scale,1));
+}
 #screen.visible{opacity:1}
 
 .bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-repeat:no-repeat;background-position:center center;background-size:1280px 720px;z-index:0}
@@ -55,7 +68,7 @@ body{display:flex;align-items:center;justify-content:center}
   #screen{
     /* 内部は常に 1280x720 を想定し、表示は scale() で縮小する */
     width: 1280px; height: 720px;
-    transform: scale(min(var(--screen-fit-w), var(--screen-fit-h)));
+    transform: translate(-50%,-50%) scale(min(var(--screen-fit-w), var(--screen-fit-h)));
     transform-origin: center center;
   }
   /* レイヤーと背景は内部サイズを維持する */

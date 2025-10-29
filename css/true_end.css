@@ -30,10 +30,11 @@
   --btn-restart-top: 450px;
 }
 
+/* 画面外（余白）も黒。スクロール抑止と safe-area 対応 */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
-body{display:flex;align-items:center;justify-content:center}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);box-sizing:border-box}
 
-#screen{position:relative;width:var(--screen-width);height:var(--screen-height);box-sizing:border-box;opacity:0;/* 退場(フェードアウト)時のトランジション */transition:opacity var(--te-screen-fade-out, var(--transition-duration)) ease}
+#screen{position:fixed;left:50%;top:50%;width:var(--screen-width);height:var(--screen-height);box-sizing:border-box;opacity:0;/* 退場(フェードアウト)時のトランジション */transition:opacity var(--te-screen-fade-out, var(--transition-duration)) ease;transform-origin:center center;transform: translate(-50%,-50%) scale(var(--screen-scale,1));}
 #screen.visible{opacity:1;/* 入場(フェードイン)時のトランジション */transition:opacity var(--te-screen-fade-in, var(--transition-duration)) ease}
 
 /* 一時的に別のフェード挙動を適用したい場合は JS からこれらのクラスを付与してください */
@@ -74,7 +75,7 @@ body{display:flex;align-items:center;justify-content:center}
 
 @media (max-width:1280px){
   :root{ --screen-fit-w: calc((100vw - 20px) / 1280); --screen-fit-h: calc((100vh - 20px) / 720) }
-  #screen{ width:1280px; height:720px; transform: scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
+  #screen{ width:1280px; height:720px; transform: translate(-50%,-50%) scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
   .bg, .scene-layer{ width:1280px; height:720px }
   .scene-layer img, .btn-ui{ max-width:none; height:auto }
 }

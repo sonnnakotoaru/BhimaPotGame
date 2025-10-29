@@ -88,11 +88,6 @@ body, img { -webkit-user-select: none; -ms-user-select: none; user-select: none;
   #screen{ width:1280px; height:720px; transform: translate(-50%,-50%) scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
   .bg, .scene-layer{ width:1280px; height:720px }
   .scene-layer img, .btn-ui{ max-width:none; height:auto }
-  /* Small-screen touch targets: make buttons easier to tap on phones */
-  @media (max-width: 1280px){
+  /* 生成テキストコンテナは削除済み */
+}
     /* scale is handled by js/screen-fit.js which writes --screen-scale */
-  #screen{ width:1280px; height:720px }
-    .bg, .scene-layer{ width:1280px; height:720px }
-    .scene-layer img, .btn-ui{ max-width:none; height:auto }
-    /* 生成テキストコンテナは削除済み */
-  }

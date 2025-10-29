@@ -15,14 +15,14 @@
 			--btn-restart-top: 550px;                        /* 再スタートの上からの位置 */
 }
 
+/* 画面外（余白）も黒。スクロール抑止＋safe-area 対応 */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
-/* 画面中央に配置するための設定 */
-body{display:flex;align-items:center;justify-content:center}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);box-sizing:border-box}
 
 /* #screen はゲームの『キャンバス』です（絵を置く大きな箱）。
-   - 普段は透明（opacity:0）で、.visible をつけるとふわっと表示されます。
-   - サイズは上で決めた --screen-width / --screen-height を使います。 */
-#screen{position:relative;width:var(--screen-width);height:var(--screen-height);box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) ease}
+	- 普段は透明（opacity:0）で、.visible をつけるとふわっと表示されます。
+	- サイズは上で決めた --screen-width / --screen-height を使います。 */
+#screen{position:fixed;left:50%;top:50%;width:var(--screen-width);height:var(--screen-height);box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) ease;transform-origin:center center;transform: translate(-50%,-50%) scale(var(--screen-scale,1));}
 #screen.visible{opacity:1}
 
 /* layers */
@@ -96,7 +96,7 @@ body{display:flex;align-items:center;justify-content:center}
 */
 @media (max-width: 1280px){
   :root{ --screen-fit-w: calc((100vw - 20px) / 1280); --screen-fit-h: calc((100vh - 20px) / 720); }
-  #screen{ width:1280px; height:720px; transform: scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
+	#screen{ width:1280px; height:720px; transform: translate(-50%,-50%) scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
   .bg, .scene-layer{ width:1280px; height:720px }
   .scene-layer img, .btn-ui{ max-width:none; height:auto }
 }
