@@ -41,7 +41,21 @@ body, img { -webkit-user-select: none; -ms-user-select: none; user-select: none;
   幅1280×高さ720で固定して、最初は透明にしておいて
   表示したいときに .visible を付けてフェードインさせます。
 */
-#screen{position:relative;width:1280px;height:720px;box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1);transform-origin:center center;transform: scale(var(--screen-scale,1));}
+#screen{
+  /* Use fixed positioning centered on the viewport so mobile address-bar / visualViewport
+     changes don't visually shift the canvas. Positioning is handled via left/top + translate.
+     Scaling is applied via --screen-scale. */
+  position:fixed;
+  left:50%;
+  top:50%;
+  width:1280px;
+  height:720px;
+  box-sizing:border-box;
+  opacity:0;
+  transition:opacity var(--transition-duration) cubic-bezier(0.22,0.8,0.25,1);
+  transform-origin:center center;
+  transform: translate(-50%,-50%) scale(var(--screen-scale,1));
+}
 #screen.visible{opacity:1}
 
 /* 背景画像を置く場所です。いつも一番後ろに置かれます。
@@ -71,13 +85,13 @@ body, img { -webkit-user-select: none; -ms-user-select: none; user-select: none;
 */
 @media (max-width: 1280px){
   :root{ --screen-fit-w: calc((100vw - 20px) / 1280); --screen-fit-h: calc((100vh - 20px) / 720); }
-  #screen{ width:1280px; height:720px; transform: scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
+  #screen{ width:1280px; height:720px; transform: translate(-50%,-50%) scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
   .bg, .scene-layer{ width:1280px; height:720px }
   .scene-layer img, .btn-ui{ max-width:none; height:auto }
   /* Small-screen touch targets: make buttons easier to tap on phones */
   @media (max-width: 1280px){
     /* scale is handled by js/screen-fit.js which writes --screen-scale */
-    #screen{ width:1280px; height:720px }
+  #screen{ width:1280px; height:720px }
     .bg, .scene-layer{ width:1280px; height:720px }
     .scene-layer img, .btn-ui{ max-width:none; height:auto }
     /* 生成テキストコンテナは削除済み */
