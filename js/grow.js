@@ -268,20 +268,22 @@
     }
   }
 
-  const maryokuMap = {
-    1: {6:'assets/ui_text/grow/maryoku/01.png',8:'assets/ui_text/grow/maryoku/02.png',10:'assets/ui_text/grow/maryoku/03.png'},
-    2: {6:'assets/ui_text/grow/maryoku/04.png',8:'assets/ui_text/grow/maryoku/05.png',10:'assets/ui_text/grow/maryoku/06.png'},
-    3: {6:'assets/ui_text/grow/maryoku/07.png',8:'assets/ui_text/grow/maryoku/08.png',10:'assets/ui_text/grow/maryoku/09.png'},
-    4: {6:'assets/ui_text/grow/maryoku/10.png',8:'assets/ui_text/grow/maryoku/11.png',10:'assets/ui_text/grow/maryoku/12.png'},
-    5: {6:'assets/ui_text/grow/maryoku/13.png',8:'assets/ui_text/grow/maryoku/14.png',10:'assets/ui_text/grow/maryoku/15.png'}
+  // 可読性向上: Dayごとに+3ずつ連番（6,8,10）を割り当てる規則から自動生成
+  function pad2(n){ try{ return String(n).padStart(2, '0') }catch(e){ return (n<10?'0':'') + String(n) } }
+  function buildThreeLevelMap(baseDir, startIndex){
+    const m = {}
+    for(let day=1; day<=5; day++){
+      const idx = startIndex + (day-1)*3
+      m[day] = {
+        6: baseDir + '/' + pad2(idx) + '.png',
+        8: baseDir + '/' + pad2(idx+1) + '.png',
+        10: baseDir + '/' + pad2(idx+2) + '.png'
+      }
+    }
+    return m
   }
-  const taionnMap = {
-    1: {6:'assets/ui_text/grow/taionn/01.png',8:'assets/ui_text/grow/taionn/02.png',10:'assets/ui_text/grow/taionn/03.png'},
-    2: {6:'assets/ui_text/grow/taionn/04.png',8:'assets/ui_text/grow/taionn/05.png',10:'assets/ui_text/grow/taionn/06.png'},
-    3: {6:'assets/ui_text/grow/taionn/07.png',8:'assets/ui_text/grow/taionn/08.png',10:'assets/ui_text/grow/taionn/09.png'},
-    4: {6:'assets/ui_text/grow/taionn/10.png',8:'assets/ui_text/grow/taionn/11.png',10:'assets/ui_text/grow/taionn/12.png'},
-    5: {6:'assets/ui_text/grow/taionn/13.png',8:'assets/ui_text/grow/taionn/14.png',10:'assets/ui_text/grow/taionn/15.png'}
-  }
+  const maryokuMap = buildThreeLevelMap('assets/ui_text/grow/maryoku', 1)
+  const taionnMap = buildThreeLevelMap('assets/ui_text/grow/taionn', 1)
   const inngaMap = {1:'assets/ui_text/grow/innga/01.png',2:'assets/ui_text/grow/innga/02.png',3:'assets/ui_text/grow/innga/03.png'}
   const utuwaMap = {1:'assets/ui_text/grow/utuwa/01.png',2:'assets/ui_text/grow/utuwa/02.png',3:'assets/ui_text/grow/utuwa/03.png'}
 
@@ -393,6 +395,20 @@
 
         growDialog.style.opacity = '0'
 
+        // 日送りセリフ（hiokuri）はセリフ画像自体の視認性を上げるため、表示中のみ枠線を付与
+        try{
+          const isHiokuri = typeof src === 'string' && src.indexOf('assets/ui_text/grow/hiokuri/') !== -1
+          if(isHiokuri){
+            growDialog.__hiokuriPrevBoxShadow = growDialog.style.boxShadow
+            growDialog.__hiokuriPrevOutline = growDialog.style.outline
+            growDialog.__hiokuriPrevOutlineOffset = growDialog.style.outlineOffset
+            growDialog.style.boxShadow = '0 0 0 2px #000'
+            growDialog.style.outline = 'none'
+            growDialog.style.outlineOffset = ''
+            growDialog.__hiokuriBoxApplied = true
+          }
+        }catch(e){}
+
         requestAnimationFrame(()=>{
           try{ growDialog.style.opacity = '1' }catch(e){}
         })
@@ -411,6 +427,19 @@
 
         try{ if(Date.now() < suppressAutoDialogsUntil){ try{ growDialog.style.display='none'; growDialog.src=''; growDialog.style.opacity='0' }catch(e){} ; resolve(); return } }catch(e){}
         if(typeof ms === 'number') growDialog.style.transition = 'opacity ' + (ms/1000) + 's ease'
+
+        // hiokuri向けに付与した枠線を復元
+        try{
+          if(growDialog.__hiokuriBoxApplied){
+            growDialog.style.boxShadow = (growDialog.__hiokuriPrevBoxShadow != null ? growDialog.__hiokuriPrevBoxShadow : '')
+            growDialog.style.outline = (growDialog.__hiokuriPrevOutline != null ? growDialog.__hiokuriPrevOutline : '')
+            growDialog.style.outlineOffset = (growDialog.__hiokuriPrevOutlineOffset != null ? growDialog.__hiokuriPrevOutlineOffset : '')
+            growDialog.__hiokuriBoxApplied = false
+            growDialog.__hiokuriPrevBoxShadow = undefined
+            growDialog.__hiokuriPrevOutline = undefined
+            growDialog.__hiokuriPrevOutlineOffset = undefined
+          }
+        }catch(e){}
 
         growDialog.style.opacity = '0'
   const onEnd = (ev)=>{ try{ growDialog.removeEventListener('transitionend', onEnd) }catch(e){} ; try{ growDialog.style.display='none'; setGrowDialogSrc('') }catch(e){} ; resolve() }
@@ -485,6 +514,25 @@
   growDialog.style.display = 'block'
   try{ growDialog.style.opacity = '1' }catch(e){}
 
+        // セリフ画像（魔力/体温）のみ視認性を上げる: 枠線を一時的に付与（フィルタ不使用）
+        let _restoreDialogStyle = null
+        if(type === 'mana' || type === 'temp'){
+          try{
+            const prevBoxShadow = growDialog.style.boxShadow
+            const prevOutline = growDialog.style.outline
+            const prevOutlineOffset = growDialog.style.outlineOffset
+            // くっきりした1px枠で縁を強調（blurなし）
+            growDialog.style.boxShadow = '0 0 0 2px #000'
+            growDialog.style.outline = 'none'
+            growDialog.style.outlineOffset = ''
+            _restoreDialogStyle = ()=>{
+              try{ growDialog.style.boxShadow = (prevBoxShadow != null ? prevBoxShadow : '') }catch(e){}
+              try{ growDialog.style.outline = (prevOutline != null ? prevOutline : '') }catch(e){}
+              try{ growDialog.style.outlineOffset = (prevOutlineOffset != null ? prevOutlineOffset : '') }catch(e){}
+            }
+          }catch(e){ _restoreDialogStyle = null }
+        }
+
         try{
           const dialogDur = (type === 'innga' || type === 'utuwa')
             ? (typeof TIMINGS.inngaUtuwaDisplay === 'number' ? TIMINGS.inngaUtuwaDisplay : 2200)
@@ -538,6 +586,7 @@
           : 1400
         setTimeout(()=>{
           try{
+            try{ if(typeof _restoreDialogStyle === 'function') _restoreDialogStyle() }catch(e){}
 
             try{ growDialog.style.opacity = '0' }catch(e){}
 
