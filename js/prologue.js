@@ -65,12 +65,28 @@
 
 	// i 番目の画像をフェード付きで表示する（画像が無ければ 0 に戻す）
 	let _prologue_animating = false
+	// 画像の事前読み込み（decode 対応 + タイムアウト付き）
+	function preloadImage(src, timeoutMs){
+		return new Promise((resolve)=>{
+			try{
+				const img = new Image()
+				img.src = src
+				let done = false
+				const finish = ()=>{ if(done) return; done = true; resolve() }
+				if(img.decode){ img.decode().then(finish).catch(finish) }
+				img.onload = finish; img.onerror = finish
+				if(typeof timeoutMs === 'number' && timeoutMs > 0){ setTimeout(finish, timeoutMs) }
+			}catch(e){ resolve() }
+		})
+	}
 	async function showImage(i){
 		if(!prologueBody) return
 		if(_prologue_animating) return // 多重実行を避ける
 		_prologue_animating = true
 
 		const src = uiImages[i] || uiImages[0]
+		// フェードアウトと並行して次画像を事前読み込みし、入れ替え時のチラつきを防ぐ
+		const preloadPromise = preloadImage(src, 1200)
 
 		// CSS 変数を取得（fallback はデフォルト値）
 		const fadeInStr = getRootVar('--prologue-body-fade-in', '600ms')
@@ -87,6 +103,7 @@
 
 		// フェードアウト（現在の表示を消す）
 		try{
+			prologueBody.style.willChange = 'opacity'
 			prologueBody.style.transition = `opacity ${fadeOutStr} ease`
 			prologueBody.style.opacity = startOp
 		}catch(e){}
@@ -94,7 +111,8 @@
 		// フェードアウト時間が終わるのを待つ
 		await new Promise(r => setTimeout(r, fadeOutMs + 20))
 
-		// 画像差し替え
+		// 画像差し替え（事前読み込みの完了を待つ）
+		try{ await preloadPromise }catch(e){}
 		prologueBody.src = src
 
 		// フェードイン設定（遅延を付ける）
@@ -103,12 +121,16 @@
 			prologueBody.style.transition = `opacity ${fadeInStr} ease ${delayStr}`
 			// 初期不透明度を確実にセットしてから次のフレームで end にする
 			prologueBody.style.opacity = startOp
+			// レイアウトを強制評価してステップを確実に分離
+			try{ void prologueBody.offsetWidth }catch(e){}
 			requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ prologueBody.style.opacity = endOp }) })
 		}catch(e){}
 
 		// フェードインが終わるのを待つ（遅延 + duration）
 		await new Promise(r => setTimeout(r, delayMs + fadeInMs + 20))
 
+		// will-change を戻しておく
+		try{ prologueBody.style.willChange = '' }catch(e){}
 		_prologue_animating = false
 	}
 

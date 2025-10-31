@@ -153,7 +153,11 @@
         if(btnBegin._locked) return; btnBegin._locked = true;
         btnBegin.classList.add('disabled'); btnBegin.setAttribute('aria-disabled','true')
         if(screen) screen.style.pointerEvents = 'none'
-        setTimeout(()=>{ btnBegin._locked = false }, 2000)
+        setTimeout(()=>{ 
+          btnBegin._locked = false
+          try{ btnBegin.classList.remove('disabled'); btnBegin.removeAttribute('aria-disabled') }catch(e){}
+          try{ if(screen) screen.style.pointerEvents = '' }catch(e){}
+        }, 2000)
       }catch(e){}
       try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
       fadeOutThen(()=>{ stopAnims(); location.href = 'prologue.html' })
@@ -167,7 +171,11 @@
         if(btnExit._locked) return; btnExit._locked = true;
         btnExit.classList.add('disabled'); btnExit.setAttribute('aria-disabled','true')
         if(screen) screen.style.pointerEvents = 'none'
-        setTimeout(()=>{ btnExit._locked = false }, 2000)
+        setTimeout(()=>{ 
+          btnExit._locked = false
+          try{ btnExit.classList.remove('disabled'); btnExit.removeAttribute('aria-disabled') }catch(e){}
+          try{ if(screen) screen.style.pointerEvents = '' }catch(e){}
+        }, 2000)
       }catch(e){}
       try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
       alert('ゲームを終了するには画面を閉じて下さい')
@@ -181,7 +189,11 @@
         if(btnCredit._locked) return; btnCredit._locked = true;
         btnCredit.classList.add('disabled'); btnCredit.setAttribute('aria-disabled','true')
         if(screen) screen.style.pointerEvents = 'none'
-        setTimeout(()=>{ btnCredit._locked = false }, 2000)
+        setTimeout(()=>{ 
+          btnCredit._locked = false
+          try{ btnCredit.classList.remove('disabled'); btnCredit.removeAttribute('aria-disabled') }catch(e){}
+          try{ if(screen) screen.style.pointerEvents = '' }catch(e){}
+        }, 2000)
       }catch(e){}
       try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
       fadeOutThen(()=>{ stopAnims(); location.href = 'credit.html' })
