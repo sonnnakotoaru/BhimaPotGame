@@ -140,6 +140,8 @@
   let bgmWasPlayingBeforeDaySend = false
   let busy = false
   let _lockedButtons = []
+  // プロローグと同等の遷移ガード: 画面遷移やフェード中のクリックを無視する
+  let _navigating = false
   // animation timers
   let lightTimer = null
   let duryTimer = null
@@ -1068,18 +1070,37 @@
     })
   }
 
-  // busy lock
+  // busy lock（プロローグと同等の .disabled/aria-disabled を付与）
   function setBusy(state, targets){
-    if(state){
-      busy = true
-      const buttons = targets ? (Array.isArray(targets) ? targets : [targets]) : [btnBlood, btnWarm, btnKitchen, btnFollow]
-      _lockedButtons = buttons.filter(Boolean)
-      _lockedButtons.forEach(b => b.classList.add('btn-locked'))
-    } else {
-      const toRemove = _lockedButtons.slice(); _lockedButtons = []
-      setTimeout(()=> toRemove.forEach(b=>b.classList.remove('btn-locked')), 300)
-      busy = false
-    }
+    try{
+      if(state){
+        busy = true
+        // 対象が指定されていればそのボタン群のみ、未指定なら全 UI ボタンをロック
+        let buttons = []
+        if(targets){
+          buttons = (Array.isArray(targets) ? targets : [targets])
+        } else {
+          try{ buttons = Array.prototype.slice.call(document.querySelectorAll('.btn-ui')) }catch(e){ buttons = [btnBlood, btnWarm, btnKitchen, btnFollow, btnSleep] }
+        }
+        _lockedButtons = buttons.filter(Boolean)
+        _lockedButtons.forEach(b=>{
+          try{ b.classList.add('btn-locked') }catch(e){}
+          try{ b.classList.add('disabled') }catch(e){}
+          try{ b.setAttribute('aria-disabled','true') }catch(e){}
+        })
+      } else {
+        const toRemove = _lockedButtons.slice(); _lockedButtons = []
+        // 少し遅らせてロック解除（視覚的な自然さのため）
+        setTimeout(()=>{
+          toRemove.forEach(b=>{
+            try{ b.classList.remove('btn-locked') }catch(e){}
+            try{ b.classList.remove('disabled') }catch(e){}
+            try{ b.removeAttribute('aria-disabled') }catch(e){}
+          })
+        }, 300)
+        busy = false
+      }
+    }catch(e){ busy = !!state }
   }
 
   // Handle vessel crack visual + sound + dialog sequence for a given level (1..3)
@@ -1168,7 +1189,7 @@
 
   // button handlers
   btnBlood && btnBlood.addEventListener('click', async (e)=>{
-    if(busy) return
+    if(_navigating || busy) return
     setBusy(true, btnBlood)
     e && e.preventDefault()
     try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
@@ -1229,7 +1250,7 @@
   })
 
   btnWarm && btnWarm.addEventListener('click', async (e)=>{
-    if(busy) return
+    if(_navigating || busy) return
     setBusy(true, btnWarm)
     e && e.preventDefault()
     try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
@@ -1250,6 +1271,9 @@
 
   async function doTransitionCheck(target){
     try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+    // 遷移処理中は追加の入力を受け付けない（プロローグ準拠）
+    _navigating = true
+    try{ setBusy(true) }catch(e){}
     // start fade
     if(window.transitionAPI && window.transitionAPI.fadeOutThen){ window.transitionAPI.fadeOutThen(()=>{}, 400) } else { screen && screen.classList.remove('visible') }
     // Wait for fade to visually complete before deciding next action
@@ -1334,7 +1358,7 @@
 
   // primary action handlers: if gauges meet threshold, run day-send; otherwise fallback to existing transition check
   btnKitchen && btnKitchen.addEventListener('click', async (e)=>{
-    if(busy) return
+    if(_navigating || busy) return
     e && e.preventDefault()
     try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
     const okMana = (mana >= 8)
@@ -1353,7 +1377,7 @@
   })
 
   btnFollow && btnFollow.addEventListener('click', async (e)=>{
-    if(busy) return
+    if(_navigating || busy) return
     e && e.preventDefault()
     try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
     const okMana = (mana >= 8)
@@ -1373,7 +1397,7 @@
 
   // sleep button: advances to next day
   btnSleep && btnSleep.addEventListener('click', async (e)=>{
-    if(busy) return
+    if(_navigating || busy) return
     setBusy(true)
     // Immediately suppress automatic dialogs to avoid any scheduled/queued dialog
     // firing during the sleep fade-out/fade-in sequence.
@@ -1426,8 +1450,8 @@
     playBgmIfNeeded();
     // preload assets to ensure blood/hand frames are ready
     try{ preloadAssets(PRELOAD_ASSETS) }catch(e){}
-  // amplify heartbeat SE ~2.5x so it's more audible during warm sequence
-  try{ amplifyAudioElement('se-heart', 2.5) }catch(e){}
+  // amplify heartbeat SE ~3.5x so it's more audible during warm sequence
+  try{ amplifyAudioElement('se-heart', 5) }catch(e){}
   // set cause-break SEs back to unity gain
   try{ amplifyAudioElement('se-cause-break1', 1.0) }catch(e){}
   try{ amplifyAudioElement('se-cause-break3', 1.0) }catch(e){}

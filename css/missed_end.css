@@ -20,6 +20,13 @@
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
 body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);box-sizing:border-box}
 
+/* 全シーン共通: #screen 内のすべての画像をドット補間なしで表示（にじみ防止） */
+#screen img{
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 #screen{position:fixed;left:50%;top:50%;width:var(--screen-width);height:var(--screen-height);box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) ease;transform-origin:center center;transform: translate(-50%,-50%) scale(var(--screen-scale,1));}
 #screen.visible{opacity:1}
 
