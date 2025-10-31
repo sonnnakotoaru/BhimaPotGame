@@ -84,34 +84,46 @@
     }catch(e){ return true }
   }
 
-  // 本文画像を表示する。distorted のパターンに合わせる。
+  // 本文画像をフェードアウト→フェードインで切り替える
   function showImage(i){
     if(_animating) return
     _animating = true
     container = container || document.querySelector('[data-ui-text-container]')
     if(!container) return
-    container.innerHTML = ''
-    const img = document.createElement('img')
-    img.className = 'ui-text-image hide'
-    img.src = uiImages[i]
-    img.alt = ''
-    img.width = 1280; img.height = 720
-    container.appendChild(img)
-    // 少し遅らせてクラスを切り替えることで CSS トランジションを発火させる
-  setTimeout(()=>{ try{ img.classList.remove('hide'); img.classList.add('show') }catch(e){} }, 30)
-  // フェードイン完了まで待機
-  setTimeout(()=>{ _animating = false }, bodyFadeInMs + 60)
+    const prev = container.querySelector('img.ui-text-image')
+    const doFadeInNext = ()=>{
+      // 既存を消したあと、新しい画像を追加してフェードイン
+      try{ if(container) container.innerHTML = '' }catch(e){}
+      const img = document.createElement('img')
+      img.className = 'ui-text-image hide'
+      img.src = uiImages[i]
+      img.alt = ''
+      img.width = 1280; img.height = 720
+      container.appendChild(img)
+      // 少し遅らせてクラスを切り替えることで CSS トランジションを発火させる
+      setTimeout(()=>{ try{ img.classList.remove('hide'); img.classList.add('show') }catch(e){} }, 30)
+      // フェードイン完了まで待機してロック解除
+      setTimeout(()=>{ _animating = false }, bodyFadeInMs + 60)
 
-    // 各本文画像の表示に合わせて灯りを段階的に暗くする
-    try{
-      light = light || document.getElementById('bv-light')
-      if(light){
-        const target = computeLightOpacityForIndex(i)
-        // CSS の transition を利用して自然にフェードさせる
-        // 少し遅らせて（画像の show 発火後） opacity を設定する
-        setTimeout(()=>{ try{ light.style.opacity = String(target) }catch(e){} }, 60)
-      }
-    }catch(e){}
+      // 画像の切り替えとタイミングを合わせて灯りも段階的に暗くする
+      try{
+        light = light || document.getElementById('bv-light')
+        if(light){
+          const target = computeLightOpacityForIndex(i)
+          // 画像の show 発火直後に opacity を設定する
+          setTimeout(()=>{ try{ light.style.opacity = String(target) }catch(e){} }, 60)
+        }
+      }catch(e){}
+    }
+
+    if(prev){
+      // 先にフェードアウト
+      try{ prev.classList.remove('show'); prev.classList.add('hide') }catch(e){}
+      setTimeout(()=>{ doFadeInNext() }, bodyFadeOutMs + 20)
+    } else {
+      // 初回はそのままフェードイン
+      doFadeInNext()
+    }
   }
 
   function revealFinalUI(){
@@ -141,6 +153,11 @@
 
     // 読み直して最新の CSS 設定を使う（ms）
     const waitMs = readRootMs('--bv-body-fade-out', bodyFadeOutMs)
+    // まず現在の本文画像をフェードアウト
+    try{
+      const prev = container ? container.querySelector('img.ui-text-image') : null
+      if(prev){ try{ prev.classList.remove('show'); prev.classList.add('hide') }catch(e){} }
+    }catch(e){}
     // 少し余裕を見て待つ（CSS のトランジション完了後に実行）
     setTimeout(doShowTitle, waitMs + 20)
   }
@@ -194,7 +211,9 @@
         }catch(e){ setTimeout(()=>{ location.href = 'start.html' }, 400) }
       } }; btnRestart.addEventListener('click', btnRestart._bve_handler) }
 
-    const screen = document.getElementById('screen'); if(screen) screen.classList.add('visible')
+  // 画面フェードイン（rAF+短い遅延で CSS の opacity トランジションを確実に発火）
+  const screen = document.getElementById('screen')
+  if(screen){ requestAnimationFrame(()=> setTimeout(()=>{ try{ screen.classList.add('visible') }catch(e){} }, 20)) }
   }
 
   try{ init() }catch(e){ console.error(e) }

@@ -63,7 +63,7 @@
     if(duryTimer) clearInterval(duryTimer)
     const seq = [0,1,2,1] // 0->1->2->1 の順でループ
     let i = 0
-    duryTimer = setInterval(()=>{ setCharStateByIndex(seq[i % seq.length]); i++ }, 500)
+    duryTimer = setInterval(()=>{ setCharStateByIndex(seq[i % seq.length]); i++ }, 700)
   }
 
   // キャラの自動切り替えを止める
@@ -81,48 +81,82 @@
     _animating = true
     // image-only mode: insert into container if it exists, otherwise skip
     container = container || document.querySelector('[data-ui-text-container]')
-    if(!container) return
-    // 追加する画像のパス
+    if(!container){ _animating = false; return }
+
+    // CSS 変数（フェード時間）を取得
+    const cs = getComputedStyle(document.documentElement)
+    const finStr = (cs.getPropertyValue('--prologue-body-fade-in')||'').trim() || '600ms'
+    const foutStr = (cs.getPropertyValue('--prologue-body-fade-out')||'').trim() || '400ms'
+    const delayStr = (cs.getPropertyValue('--prologue-body-fade-delay')||'').trim() || '0ms'
+    const toMs = (v)=>{ v=String(v).trim(); if(v.endsWith('ms')) return Math.round(parseFloat(v)); if(v.endsWith('s')) return Math.round(parseFloat(v)*1000); const n=parseFloat(v); return Number.isFinite(n)?Math.round(n):0 }
+    const finMs = toMs(finStr)
+    const foutMs = toMs(foutStr)
+    const delayMs = toMs(delayStr)
+
+    // 追加する画像のパスとタイトル要素状態
     const targetSrc = uiImages[i]
     const titleEl = document.getElementById('distorted-title')
+    const titleVisible = !!(titleEl && titleEl.classList && titleEl.classList.contains('show'))
 
-    // もしタイトル要素が同じ画像を指しているなら、コンテナに同じ画像を入れず
-    // タイトル要素だけを表示する（重複表示を避けるため）
+    // ターゲットがタイトルと同一か（タイトルに任せるパス）
     const sameAsTitle = titleEl && typeof titleEl.src === 'string' && titleEl.src.split('/').pop() === targetSrc.split('/').pop()
 
-    // まずコンテナをクリア
-    container.innerHTML = ''
+    const prev = container.querySelector('.ui-text-image')
+
+    // ヘルパー: 本文画像を挿入してフェードイン
+    const insertAndFadeIn = ()=>{
+      const img = document.createElement('img')
+      img.className = 'ui-text-image hide'
+      img.src = targetSrc
+      img.alt = ''
+      img.width = 1280; img.height = 720
+      img.style.display = 'block'
+      img.style.margin = '0 auto'
+      container.appendChild(img)
+      setTimeout(()=>{ try{ img.classList.remove('hide'); img.classList.add('show') }catch(e){} }, 30)
+      // 入場フェード完了後にアニメ解除
+      setTimeout(()=>{ _animating = false }, delayMs + finMs + 60)
+    }
+
+    // 1) 表示先がタイトルのとき
     if(sameAsTitle){
-      // タイトル要素を表示に戻す（JS が代わりに表示する）
-      try{ titleEl.classList.remove('hide'); titleEl.classList.add('show') }catch(e){}
+      // 先に本文があればフェードアウトしてから片付ける
+      if(prev){
+        try{ prev.classList.remove('show'); prev.classList.add('hide') }catch(e){}
+        setTimeout(()=>{ try{ if(prev.parentElement) prev.parentElement.removeChild(prev) }catch(e){} }, foutMs + 40)
+      } else {
+        // prev がない場合は特に待たず継続
+      }
+      // タイトルをフェードイン
+      try{
+        if(titleEl){
+          // まず確実に hide を外してから show を適用
+          titleEl.classList.remove('hide')
+          setTimeout(()=>{ try{ titleEl.classList.add('show') }catch(e){} }, 30)
+        }
+      }catch(e){}
+      // 十分な時間後にアニメ解除（入場フェード時間に合わせる）
+      setTimeout(()=>{ _animating = false }, delayMs + finMs + 60)
       return
     }
 
-  // タイトルが見えている場合は非表示に戻す（本文画像を優先して表示するため）
-  try{ if(titleEl){ titleEl.classList.remove('show'); titleEl.classList.add('hide') } }catch(e){}
+    // 2) タイトルが見えていれば先にフェードアウト
+    if(titleVisible){
+      try{ titleEl.classList.remove('show'); titleEl.classList.add('hide') }catch(e){}
+      // タイトルの退場が終わってから本文を入れる
+      setTimeout(()=>{ insertAndFadeIn() }, foutMs + 40)
+      return
+    }
 
-    const img = document.createElement('img')
-    img.className = 'ui-text-image hide' // 初期は hide（透明）にしておく
-    img.src = targetSrc
-    img.alt = ''
-    img.width = 1280; img.height = 720
-    img.style.display = 'block'
-    img.style.margin = '0 auto'
-    container.appendChild(img)
+    // 3) 既存の本文があればまずフェードアウト
+    if(prev){
+      try{ prev.classList.remove('show'); prev.classList.add('hide') }catch(e){}
+      setTimeout(()=>{ try{ if(prev.parentElement) prev.parentElement.removeChild(prev) }catch(e){}; insertAndFadeIn() }, foutMs + 40)
+      return
+    }
 
-    // 少し遅らせて .show を付けることで CSS の transition が効くようにする
-    setTimeout(()=>{
-      try{ img.classList.remove('hide'); img.classList.add('show') }catch(e){}
-    }, 30)
-    // フェードイン完了まで待ってからアニメ中フラグを解除
-    try{
-      const cs = getComputedStyle(document.documentElement)
-      const fin = (cs.getPropertyValue('--prologue-body-fade-in')||'').trim() || '600ms'
-      const del = (cs.getPropertyValue('--prologue-body-fade-delay')||'').trim() || '0ms'
-      const toMs = (v)=>{ v=String(v).trim(); if(v.endsWith('ms')) return Math.round(parseFloat(v)); if(v.endsWith('s')) return Math.round(parseFloat(v)*1000); const n=parseFloat(v); return Number.isFinite(n)?Math.round(n):0 }
-      const wait = toMs(fin) + toMs(del) + 60
-      setTimeout(()=>{ _animating = false }, wait)
-    }catch(e){ setTimeout(()=>{ _animating = false }, 700) }
+    // 4) そのまま本文を入れてフェードイン
+    insertAndFadeIn()
   }
 
   // 最後の画面を見せる準備。
@@ -198,8 +232,12 @@
         }catch(e){ setTimeout(()=>{ location.href = 'start.html' }, 400) }
       } }; btnRestart.addEventListener('click', btnRestart._dist_handler) }
 
-    // 画面全体をふわっと表示
-    const screen = document.getElementById('screen'); if(screen) screen.classList.add('visible')
+    // 画面全体をふわっと表示（requestAnimationFrame + ごく短い遅延で確実に発火）
+    const screen = document.getElementById('screen')
+    if(screen){
+      try{ screen.style.removeProperty('opacity') }catch(e){}
+      requestAnimationFrame(()=> setTimeout(()=>{ try{ screen.classList.add('visible') }catch(e){} }, 20))
+    }
   }
 
   try{ init() }catch(e){ console.error(e) }
@@ -216,6 +254,36 @@
       const title = document.getElementById('distorted-title'); if(title) title.classList.remove('show')
       if(btnRestart) btnRestart.classList.remove('show')
       if(container) container.innerHTML = ''
+    }
+  }
+
+  // フェードアウトして遷移するユーティリティ（このページ単体で動くフォールバック）
+  if(!window.transitionAPI) window.transitionAPI = {}
+  if(!window.transitionAPI.fadeOutNavigate){
+    window.transitionAPI.fadeOutNavigate = function(url, ms){
+      try{
+        const duration = typeof ms === 'number' ? ms : 400
+        // 既にオーバーレイがある場合は再利用
+        let o = document.getElementById('fade-overlay')
+        if(!o){
+          o = document.createElement('div')
+          o.id = 'fade-overlay'
+          o.style.position = 'fixed'
+          o.style.left = '0'
+          o.style.top = '0'
+          o.style.right = '0'
+          o.style.bottom = '0'
+          o.style.background = '#000'
+          o.style.opacity = '0'
+          o.style.zIndex = '99999'
+          o.style.transition = 'opacity ' + (duration/1000) + 's ease'
+          document.body.appendChild(o)
+        }
+        // トリガー
+        void o.offsetWidth
+        o.style.opacity = '1'
+        setTimeout(()=>{ try{ location.href = url }catch(e){ location.href = url } }, duration)
+      }catch(e){ try{ location.href = url }catch(_){} }
     }
   }
 

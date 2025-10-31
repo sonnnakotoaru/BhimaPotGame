@@ -233,8 +233,12 @@
   ,vesselGlowToTransparentHold: 300
   ,vesselPostTransparentPause: 120
   ,vesselLevel3EndPause: 300
-  // 日送りセリフ表示時間（ms）: hiokuri 表示の持続時間
-  ,hiokuriDisplay: 1400
+  // 日送りセリフ表示時間（ms）: hiokuri 表示の持続時間（表示を長めに）
+  ,hiokuriDisplay: 3000
+  // まばたき（閉眼キープを長めにしたい時の繰り返し回数）
+  ,duryBlinkClosedRepeats: 2
+  // まばたき（開眼キープを長めにしたい時の繰り返し回数）
+  ,duryBlinkOpenRepeats: 3
   }
   // ランタイムで変更できるようグローバルに公開
   window.growTimings = TIMINGS
@@ -332,15 +336,17 @@
     try{
       if(!duryEye || duryEyeAnimating) return
       duryEyeAnimating = true
-      const eyeFrames = [
-        'assets/character/wayang/07_duryodhana_wayang_eye_closed.png',
-        'assets/character/wayang/06_duryodhana_wayang_eye_half.png',
-        'assets/character/wayang/05_duryodhana_wayang_eye_open_narrow.png',
-        'assets/character/wayang/04_duryodhana_wayang_eye_open_clear.png',
-        'assets/character/wayang/05_duryodhana_wayang_eye_open_narrow.png',
-        'assets/character/wayang/06_duryodhana_wayang_eye_half.png',
-        'assets/character/wayang/07_duryodhana_wayang_eye_closed.png'
-      ]
+      const closed = 'assets/character/wayang/07_duryodhana_wayang_eye_closed.png'
+      const half = 'assets/character/wayang/06_duryodhana_wayang_eye_half.png'
+      const narrow = 'assets/character/wayang/05_duryodhana_wayang_eye_open_narrow.png'
+      const open = 'assets/character/wayang/04_duryodhana_wayang_eye_open_clear.png'
+      const repeatClosed = (typeof TIMINGS.duryBlinkClosedRepeats === 'number' ? Math.max(1, TIMINGS.duryBlinkClosedRepeats) : 2)
+      const repeatOpen = (typeof TIMINGS.duryBlinkOpenRepeats === 'number' ? Math.max(1, TIMINGS.duryBlinkOpenRepeats) : 3)
+      const eyeFrames = new Array(repeatClosed).fill(closed)
+        .concat([half, narrow])
+        .concat(new Array(repeatOpen).fill(open))
+        .concat([narrow, half])
+        .concat(new Array(repeatClosed).fill(closed))
       const prev = duryEye.src || ''
       const interval = Math.max(50, Math.floor(totalMs / eyeFrames.length))
       eyeFrames.forEach((f, i)=>{
@@ -542,17 +548,19 @@
             // ダイアログ終了時に元の表情に戻す
             setTimeout(()=>{ try{ if(duryEye) duryEye.src = prevEyeSrc; if(duryMouth) duryMouth.src = prevMouthSrc }catch(e){} }, dialogDur + 20)
           } else {
-            // 通常ダイアログ時は目アニメ（7->6->5->4->5->6->7）を行う
+            // 通常ダイアログ時は目アニメ。閉眼時間を長くするため、閉眼フレームを繰り返す。
             if(duryEye){
-              const eyeFrames = [
-                'assets/character/wayang/07_duryodhana_wayang_eye_closed.png',
-                'assets/character/wayang/06_duryodhana_wayang_eye_half.png',
-                'assets/character/wayang/05_duryodhana_wayang_eye_open_narrow.png',
-                'assets/character/wayang/04_duryodhana_wayang_eye_open_clear.png',
-                'assets/character/wayang/05_duryodhana_wayang_eye_open_narrow.png',
-                'assets/character/wayang/06_duryodhana_wayang_eye_half.png',
-                'assets/character/wayang/07_duryodhana_wayang_eye_closed.png'
-              ]
+              const closed = 'assets/character/wayang/07_duryodhana_wayang_eye_closed.png'
+              const half = 'assets/character/wayang/06_duryodhana_wayang_eye_half.png'
+              const narrow = 'assets/character/wayang/05_duryodhana_wayang_eye_open_narrow.png'
+              const open = 'assets/character/wayang/04_duryodhana_wayang_eye_open_clear.png'
+              const repeatClosed = (typeof TIMINGS.duryBlinkClosedRepeats === 'number' ? Math.max(1, TIMINGS.duryBlinkClosedRepeats) : 2)
+              const repeatOpen = (typeof TIMINGS.duryBlinkOpenRepeats === 'number' ? Math.max(1, TIMINGS.duryBlinkOpenRepeats) : 7)
+              const eyeFrames = new Array(repeatClosed).fill(closed)
+                .concat([half, narrow])
+                .concat(new Array(repeatOpen).fill(open))
+                .concat([narrow, half])
+                .concat(new Array(repeatClosed).fill(closed))
               const interval = Math.max(50, Math.floor(dialogDur / eyeFrames.length))
               // 保存しておく（表示前の目の状態に戻すため）
               const prevEyeSrc = duryEye.src || ''
@@ -662,7 +670,9 @@
         // preload new image to avoid flash
         const pre = new Image()
         pre.src = newSrc
+        let ran = false
         const doCrossfade = function(){
+          if(ran) return; ran = true
           try{
             const parent = el.parentElement || document.body
             // create overlay image positioned over el
@@ -672,39 +682,39 @@
             overlay.style.opacity = '0'
             overlay.style.transition = 'opacity ' + (duration/1000) + 's ease'
             overlay.style.position = 'absolute'
+            // keep pixel-art crisp on the overlay too
+            overlay.style.imageRendering = 'pixelated'
             try{
-              // compute bounding box of el relative to parent
-              const elRect = el.getBoundingClientRect()
-              const parentRect = parent.getBoundingClientRect()
-              const left = elRect.left - parentRect.left
-              const top = elRect.top - parentRect.top
+              // Use offset-based geometry so coordinates are in the parent's
+              // untransformed coordinate space (avoids mismatch with #screen scale).
+              const left = (typeof el.offsetLeft === 'number') ? el.offsetLeft : 0
+              const top = (typeof el.offsetTop === 'number') ? el.offsetTop : 0
+              const width = (typeof el.offsetWidth === 'number' && el.offsetWidth) ? el.offsetWidth : el.width
+              const height = (typeof el.offsetHeight === 'number' && el.offsetHeight) ? el.offsetHeight : el.height
               overlay.style.left = left + 'px'
               overlay.style.top = top + 'px'
-              overlay.style.width = elRect.width + 'px'
-              overlay.style.height = elRect.height + 'px'
+              overlay.style.width = width + 'px'
+              overlay.style.height = height + 'px'
             }catch(e){
-              overlay.style.left = '0'; overlay.style.top = '0'; overlay.style.width = el.width + 'px'; overlay.style.height = el.height + 'px'
+              overlay.style.left = '0'; overlay.style.top = '0'; overlay.style.width = (el && (el.offsetWidth||el.width)) + 'px'; overlay.style.height = (el && (el.offsetHeight||el.height)) + 'px'
             }
             overlay.style.zIndex = '9999'
-            // ensure parent is positioned relatively so absolute overlay aligns
-            let restoreParentPos = false
+            // ensure parent is positioned relatively so absolute overlay aligns (do not restore to avoid reflow flicker)
             try{
               const cs = window.getComputedStyle(parent)
               if(!cs || cs.position === 'static'){
-                parent.__prevPosition = parent.style.position || ''
-                parent.style.position = 'relative'
-                restoreParentPos = true
+                if(!parent.__overlayPositioned){ parent.style.position = 'relative'; parent.__overlayPositioned = true }
               }
             }catch(e){}
             parent.appendChild(overlay)
             // force reflow then fade overlay in
-            try{ void overlay.offsetWidth }catch(e){}
+            try{ overlay.style.willChange = 'opacity'; void overlay.offsetWidth }catch(e){}
             overlay.style.opacity = '1'
             // after fade completes, set el.src to newSrc and remove overlay
             setTimeout(()=>{
               try{ el.src = newSrc }catch(e){}
               try{ if(overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay) }catch(e){}
-              try{ if(restoreParentPos) parent.style.position = parent.__prevPosition || '' }catch(e){}
+              try{ el.style.willChange = '' }catch(e){}
               resolve()
             }, duration + 20)
           }catch(e){ resolve() }
@@ -791,7 +801,7 @@
       if(duryIndex >= duryFrames.length){ duryIndex = duryFrames.length-2; duryDir = -1 }
       if(duryIndex < 0){ duryIndex = 1; duryDir = 1 }
       duryImg && (duryImg.src = duryFrames[duryIndex])
-    }, 500)
+    }, 700)
   }
 
   function stopAnims(){ if(lightTimer) clearInterval(lightTimer); if(duryTimer) clearInterval(duryTimer) }
@@ -1143,7 +1153,7 @@
   // small delay to ensure glow renders before dialog
   try{ const dd = (typeof TIMINGS.vesselDialogDelay === 'number') ? TIMINGS.vesselDialogDelay : 60; await new Promise(r=>setTimeout(r, dd)) }catch(e){}
 
-        // play crack SE (level 1/2 use seVessel1, level3 use seVessel3)
+        // play crack SE (level 1/2 use seVessel1, level3 use seVessel3) — play once
         try{
           if(level >= 3){ seVessel3 && seVessel3.currentTime === 0; seVessel3 && seVessel3.play().catch(()=>{}) }
           else { seVessel1 && seVessel1.currentTime === 0; seVessel1 && seVessel1.play().catch(()=>{}) }
@@ -1177,8 +1187,7 @@
           return
         }
 
-        // level === 3: keep Duryodhana hidden and transition to broken vessel end after a short delay
-        try{ if(seVessel3) seVessel3.play().catch(()=>{}) }catch(e){}
+  // level === 3: keep Duryodhana hidden and transition to broken vessel end after a short delay
   // brief pause then fade out navigate
   try{ const p3 = (typeof TIMINGS.vesselLevel3EndPause === 'number') ? TIMINGS.vesselLevel3EndPause : 600; await new Promise(r=>setTimeout(r, p3)) }catch(e){}
         try{ if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('broken_vessel_end.html') } else { location.href = 'broken_vessel_end.html' } }catch(e){ try{ location.href = 'broken_vessel_end.html' }catch(_){} }
@@ -1208,17 +1217,20 @@
         karma = Math.min(3, karma + 1)
       }
       if(karma >= 3){
-        // まず因果ゲージ3のセリフを表示してから怒り演出・終了へ移行する
+        // まず因果ゲージ3のセリフを表示し、その表示開始と同時にSEを鳴らす（タイミングを揃える）
         let dlgP = null
         try{ dlgP = showDialogFor('innga', Math.min(3, karma)) }catch(e){ dlgP = null }
+        // ダイアログの表示は showDialogFor 内で即時に開始されるため、ここで直ちにSEを再生する
+        try{ if(seCause3){ seCause3.currentTime = 0; seCause3.play().catch(()=>{}) } }catch(e){}
         if(dlgP && dlgP.then) await dlgP
-        try{ seCause3 && seCause3.play().catch(()=>{}) }catch(e){}
-        // show anger visuals and navigate to end
-        if(duryEye) duryEye.src = 'assets/character/wayang/05_duryodhana_wayang_eye_open_narrow.png'
-        if(duryMouth) duryMouth.src = 'assets/character/wayang/10_duryodhana_wayang_mouth_open_angry.png'
-        shakeElement(gaugeKarma)
-        await new Promise(r=>setTimeout(r, 800))
-        if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('distorted_end.html') } else { location.href = 'distorted_end.html' }
+  // 遷移直前は怒り表情にしない。穏やかな閉じ表情へリセットしてから、1フレーム待ってフェードを開始。
+  shakeElement(gaugeKarma)
+  try{ if(duryEye) duryEye.src = 'assets/character/wayang/07_duryodhana_wayang_eye_closed.png' }catch(e){}
+  try{ if(duryMouth) duryMouth.src = 'assets/character/wayang/09_duryodhana_wayang_mouth_closed_smile.png' }catch(e){}
+  // UIロック＆ナビゲーションガードを立て、表情更新を確実に描画させてからフェードアウト
+  try{ _navigating = true; setBusy(true) }catch(e){}
+  try{ await new Promise(r=>{ requestAnimationFrame(()=> setTimeout(r, 20)) }) }catch(e){}
+  if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('distorted_end.html') } else { location.href = 'distorted_end.html' }
         updateGauges()
         // reset break flag for next interactions (safety)
         manaBreakHandled = false

@@ -53,7 +53,7 @@
     'assets/character/wayang/03_duryodhana_wayang_bottom.png',
   ]
 
-  const frameInterval = 500
+  const frameInterval = 700
   let lightIndex = 0
   let duryIndex = 0
 

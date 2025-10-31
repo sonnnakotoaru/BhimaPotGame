@@ -490,7 +490,7 @@
   idx = 0
   showImage(idx)
   // ページ表示中は常にドゥリョダナの 3 枚切替をループさせる
-  try{ startDuryLoop(600) }catch(e){}
+  try{ startDuryLoop(700) }catch(e){}
   // 目の瞬きループも開始する（デフォルトは 3〜7 秒でゆっくり瞬き）
   try{ startEyeLoop(3000, 7000) }catch(e){}
   // 口の軽いアニメも開始する（よく喋る設定: 0.6〜1.2 秒間隔の発話、内部でバーストあり）
