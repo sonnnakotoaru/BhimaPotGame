@@ -33,7 +33,7 @@
   }
 
   function playSE(){ try{ if(seButton){ seButton.currentTime = 0; seButton.play().catch(()=>{}) } }catch(e){} }
-  function playBgm(){ try{ if(bgm){ bgm.volume = 0.7; bgm.currentTime = 0; bgm.play().catch(()=>{}) } }catch(e){} }
+  function playBgm(){ try{ if(bgm){ bgm.volume = 0.6; bgm.currentTime = 0; bgm.play().catch(()=>{}) } }catch(e){} }
 
   function showImage(i){
     if(_animating) return
