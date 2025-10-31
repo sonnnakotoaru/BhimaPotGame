@@ -5,6 +5,24 @@
 	const btnNext = document.getElementById('btn-next')
 	const prologueBody = document.getElementById('prologue-body')
 	const se = document.getElementById('se-button')
+	let sePool = null
+	function ensureSEPool(){
+		try{
+			if(sePool && sePool.length) return sePool
+			if(!se) { sePool = []; return sePool }
+			sePool = [se]
+			// Safari 連打対策: 同一SEの複製を用意して同時再生・連続再生の取りこぼしを回避
+			for(let i=1;i<3;i++){
+				const a = se.cloneNode(true)
+				try{ a.removeAttribute('id') }catch(e){}
+				try{ a.preload = 'auto' }catch(e){}
+				try{ a.currentTime = 0 }catch(e){}
+				try{ document.body.appendChild(a) }catch(e){}
+				sePool.push(a)
+			}
+			return sePool
+		}catch(e){ sePool = se ? [se] : []; return sePool }
+	}
 
 	const uiImages = [
 		'assets/ui_text/prologue/01.png',
@@ -28,7 +46,27 @@
 		}catch(e){ return true }
 	}
 
-	function playSE(){ if(!se) return; try{ se.currentTime = 0; se.play().catch(()=>{}) }catch(e){} }
+	function playSE(){
+		try{
+			if(playSE._busy) return
+			playSE._busy = true
+			setTimeout(()=>{ playSE._busy = false }, 180)
+			const pool = ensureSEPool()
+			if(!pool || !pool.length) return
+			let el = null
+			for(let i=0;i<pool.length;i++){
+				const a = pool[i]
+				try{
+					if(a.paused || a.ended || (a.currentTime||0) === 0){ el = a; break }
+				}catch(e){}
+			}
+			if(!el) el = pool[0]
+			try{ el.pause() }catch(e){}
+			try{ el.currentTime = 0 }catch(e){}
+			const p = (function(){ try{ return el.play() }catch(e){ return null } })()
+			if(p && p.catch){ p.catch(()=>{ try{ el.load(); el.play().catch(()=>{}) }catch(e){} }) }
+		}catch(e){}
+	}
 
 	function getRootVar(name, fallback){
 		try{
