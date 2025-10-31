@@ -205,6 +205,8 @@
 
   ,hiokuriDisplay: 3000
 
+  ,inngaUtuwaDisplay: 2200
+
   ,duryBlinkClosedRepeats: 2
 
   ,duryBlinkOpenRepeats: 3
@@ -484,7 +486,9 @@
   try{ growDialog.style.opacity = '1' }catch(e){}
 
         try{
-          const dialogDur = 1400
+          const dialogDur = (type === 'innga' || type === 'utuwa')
+            ? (typeof TIMINGS.inngaUtuwaDisplay === 'number' ? TIMINGS.inngaUtuwaDisplay : 2200)
+            : 1400
           if(type === 'innga' || type === 'utuwa'){
 
             const prevEyeSrc = duryEye ? duryEye.src : ''
@@ -529,6 +533,9 @@
           }
         }catch(e){}
 
+        const endDur = (type === 'innga' || type === 'utuwa')
+          ? (typeof TIMINGS.inngaUtuwaDisplay === 'number' ? TIMINGS.inngaUtuwaDisplay : 2200)
+          : 1400
         setTimeout(()=>{
           try{
 
@@ -536,7 +543,7 @@
 
             setTimeout(()=>{ try{ growDialog.style.display = 'none'; setGrowDialogSrc('') }catch(e){} ; resolve() }, 320)
           }catch(e){ try{ growDialog.style.display = 'none'; setGrowDialogSrc('') }catch(_){} ; resolve() }
-        }, 1400)
+  }, endDur)
       }catch(e){ resolve() }
     })
   }
