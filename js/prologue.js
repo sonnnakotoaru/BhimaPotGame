@@ -6,18 +6,90 @@
 	const prologueBody = document.getElementById('prologue-body')
 	const se = document.getElementById('se-button')
 	let sePool = null
+
+	// SE 再生の堅牢化: HTMLAudio と WebAudio の二段構え
+	let seAudioMode = 'html' // 'webaudio' or 'html'
+	let seAudioCtx = null
+	let seAudioBuffer = null
+	let seGainNode = null
+	let seUnlockInstalled = false
+
+	function isHttpProtocol(){
+		try{ return typeof location !== 'undefined' && /^https?:$/i.test(location.protocol) }catch(e){ return false }
+	}
+
+	function installAudioContextUnlockers(){
+		if(seUnlockInstalled) return
+		seUnlockInstalled = true
+		const resume = ()=>{ try{ if(seAudioCtx && seAudioCtx.state === 'suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){} }
+		;['pointerdown','click','touchstart','keydown'].forEach(ev=>{
+			try{ window.addEventListener(ev, resume, { once:false, passive:true }) }catch(e){}
+		})
+	}
+
+	async function initWebAudioForSE(){
+		try{
+			const AC = window.AudioContext || window.webkitAudioContext
+			if(!AC) return false
+			seAudioCtx = seAudioCtx || new AC()
+			seGainNode = seGainNode || seAudioCtx.createGain()
+			try{ seGainNode.gain.value = 1.0 }catch(e){}
+			try{ seGainNode.connect(seAudioCtx.destination) }catch(e){}
+			installAudioContextUnlockers()
+			if(!se || !se.src || !isHttpProtocol()){
+				// file:// や src 未設定時は WebAudio を使わず HTMLAudio にフォールバック
+				seAudioMode = 'html'
+				return false
+			}
+			// 既にデコード済みならそれを使う
+			if(seAudioBuffer){ seAudioMode = 'webaudio'; return true }
+			const controller = new AbortController()
+			const timeoutId = setTimeout(()=>{ try{ controller.abort() }catch(e){} }, 4000)
+			const res = await fetch(se.src, { cache:'force-cache', signal: controller.signal })
+			clearTimeout(timeoutId)
+			const arr = await res.arrayBuffer()
+			seAudioBuffer = await new Promise((resolve, reject)=>{
+				try{ seAudioCtx.decodeAudioData(arr, resolve, reject) }catch(e){ reject(e) }
+			})
+			seAudioMode = 'webaudio'
+			return true
+		}catch(e){
+			seAudioMode = 'html'
+			return false
+		}
+	}
+
+	function tryPlaySEWebAudio(){
+		try{
+			if(seAudioMode !== 'webaudio' || !seAudioCtx || !seAudioBuffer || !seGainNode) return false
+			// iOS Safari 対策: 一度 resume を要求
+			if(seAudioCtx.state === 'suspended'){
+				try{ seAudioCtx.resume().catch(()=>{}) }catch(e){}
+				// resume の完了を待たず予約再生（次のフレームで）
+				setTimeout(()=>{ try{ const src = seAudioCtx.createBufferSource(); src.buffer = seAudioBuffer; src.connect(seGainNode); src.start(0) }catch(e){} }, 0)
+				return true
+			}
+			const src = seAudioCtx.createBufferSource()
+			src.buffer = seAudioBuffer
+			src.connect(seGainNode)
+			src.start(0)
+			return true
+		}catch(e){ return false }
+	}
 	function ensureSEPool(){
 		try{
 			if(sePool && sePool.length) return sePool
 			if(!se) { sePool = []; return sePool }
 			sePool = [se]
 			// Safari 連打対策: 同一SEの複製を用意して同時再生・連続再生の取りこぼしを回避
-			for(let i=1;i<3;i++){
+			for(let i=1;i<5;i++){
 				const a = se.cloneNode(true)
 				try{ a.removeAttribute('id') }catch(e){}
 				try{ a.preload = 'auto' }catch(e){}
 				try{ a.currentTime = 0 }catch(e){}
+				try{ a.setAttribute('playsinline','') }catch(e){}
 				try{ document.body.appendChild(a) }catch(e){}
+				try{ a.load() }catch(e){}
 				sePool.push(a)
 			}
 			return sePool
@@ -51,6 +123,8 @@
 			if(playSE._busy) return
 			playSE._busy = true
 			setTimeout(()=>{ playSE._busy = false }, 180)
+			// まずは WebAudio での再生を試みる
+			if(tryPlaySEWebAudio()) return
 			const pool = ensureSEPool()
 			if(!pool || !pool.length) return
 			let el = null
@@ -61,7 +135,7 @@
 				}catch(e){}
 			}
 			if(!el) el = pool[0]
-			try{ el.pause() }catch(e){}
+			// pause を挟まず currentTime を戻して再生（Safari の競合回避）
 			try{ el.currentTime = 0 }catch(e){}
 			const p = (function(){ try{ return el.play() }catch(e){ return null } })()
 			if(p && p.catch){ p.catch(()=>{ try{ el.load(); el.play().catch(()=>{}) }catch(e){} }) }
@@ -181,6 +255,8 @@
 	function start(){
 		idx = 0
 		showImage(idx)
+		// WebAudio 初期化（可能なら）
+		try{ initWebAudioForSE().catch(()=>{}) }catch(e){}
 		try{ if(screen && screen.classList) requestAnimationFrame(()=> setTimeout(()=> screen.classList.add('visible'), 20)) }catch(e){}
 		if(btnNext) btnNext.focus()
 	}
@@ -189,6 +265,8 @@
 		e && e.preventDefault()
 
 		if(_prologue_animating || _navigating) return
+		// クリックは確実なユーザー操作なので、AudioContext を再開しておく
+		try{ if(seAudioCtx && seAudioCtx.state === 'suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
 		try{
 			const fadeInStr = getRootVar('--prologue-body-fade-in', '600ms')
 			const fadeOutStr = getRootVar('--prologue-body-fade-out', '400ms')
@@ -200,6 +278,16 @@
 		}catch(e){ if(!lockButtons(900)) return }
 		next()
 	})
+
+	// タブ復帰時に SE 資源をリフレッシュ
+	try{
+		document.addEventListener('visibilitychange', ()=>{
+			if(document.visibilityState === 'visible'){
+				try{ const pool = ensureSEPool(); for(const a of pool){ try{ a.load() }catch(e){} } }catch(e){}
+				try{ if(seAudioCtx && seAudioCtx.state === 'suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
+			}
+		})
+	}catch(e){}
 
 	if(document.readyState === 'loading'){
 		document.addEventListener('DOMContentLoaded', ()=> setTimeout(start, 80))
