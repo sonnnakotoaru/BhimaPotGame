@@ -186,20 +186,49 @@
     stopAnims()
   })
 
-  const soundOverlay = document.getElementById('sound-overlay')
   function showSoundOverlay(){
-    if(!soundOverlay) return
-    soundOverlay.style.display = 'flex'
-    soundOverlay.setAttribute('aria-hidden','false')
-    const handler = ()=>{
-      try{ if(bgm){ bgm.play().catch(()=>{}) } }catch(e){}
-      soundOverlay.style.display = 'none'
-      soundOverlay.setAttribute('aria-hidden','true')
-      window.removeEventListener('pointerdown', handler)
-      window.removeEventListener('keydown', handler)
+    let overlay = document.getElementById('sound-overlay')
+    if(!overlay){
+      try{
+        overlay = document.createElement('div')
+        overlay.id = 'sound-overlay'
+        overlay.style.position = 'fixed'
+        overlay.style.left = '0'
+        overlay.style.top = '0'
+        overlay.style.right = '0'
+        overlay.style.bottom = '0'
+        overlay.style.display = 'none'
+        overlay.style.alignItems = 'center'
+        overlay.style.justifyContent = 'center'
+        overlay.style.zIndex = '9999'
+        overlay.style.background = 'rgba(0,0,0,0.5)'
+        const btn = document.createElement('button')
+        btn.textContent = '音を再生する'
+        btn.style.fontSize = '20px'
+        btn.style.padding = '12px 20px'
+        btn.style.cursor = 'pointer'
+        btn.addEventListener('click', ()=>{ try{ if(bgm){ bgm.play().catch(()=>{}) } }catch(e){}; hide() })
+        overlay.appendChild(btn)
+        document.body.appendChild(overlay)
+      }catch(e){}
     }
-    window.addEventListener('pointerdown', handler)
-    window.addEventListener('keydown', handler)
+    function unlock(){ try{ if(bgm){ bgm.play().catch(()=>{}) } }catch(e){}; hide() }
+    function hide(){
+      try{ overlay.style.display = 'none'; overlay.setAttribute('aria-hidden','true') }catch(e){}
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('click', unlock)
+      window.removeEventListener('touchstart', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+    try{
+      overlay.style.display = 'flex'
+      overlay.setAttribute('aria-hidden','false')
+      // iOS Safari 対応: クリック/タッチ/ポインタ/キーのいずれかで即時再生
+      window.addEventListener('pointerdown', unlock, { once:true })
+      window.addEventListener('click', unlock, { once:true })
+      window.addEventListener('touchstart', unlock, { once:true })
+      window.addEventListener('keydown', unlock, { once:true })
+    }catch(e){}
   }
 
 })();
