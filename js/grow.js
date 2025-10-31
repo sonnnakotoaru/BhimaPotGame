@@ -1367,7 +1367,7 @@
 
     try{ preloadAssets(PRELOAD_ASSETS) }catch(e){}
 
-  try{ amplifyAudioElement('se-heart', 5) }catch(e){}
+  try{ amplifyAudioElement('se-heart', 3) }catch(e){}
 
   try{ amplifyAudioElement('se-cause-break1', 1.0) }catch(e){}
   try{ amplifyAudioElement('se-cause-break3', 1.0) }catch(e){}
