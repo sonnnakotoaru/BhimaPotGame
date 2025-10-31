@@ -79,7 +79,7 @@
       try{
         if(bgm){
 
-          bgm.volume = 1.0;
+          bgm.volume = 0.7;
           if(bgm.paused){
             bgm.play().catch(()=>{
               console.log('BGM autoplay blocked; showing overlay')
