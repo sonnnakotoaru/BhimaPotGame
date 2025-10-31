@@ -24,19 +24,83 @@ window.addEventListener('load', () => {
 
   if (!btn) return;
 
-  function playSE() {
-    if (!se) return
-    if(playSE._busy) return
-    playSE._busy = true
-    try {
-      se.currentTime = 0
-      se.play().catch(()=>{})
-    } catch (e) {
-      console.warn('se play failed', e)
-    }
-
-    setTimeout(()=>{ playSE._busy = false }, 200)
+  // SE 再生の堅牢化（WebAudio 優先 + HTMLAudio プール）
+  let sePool = null
+  let seAudioMode = 'html'
+  let seAudioCtx = null
+  let seAudioBuffer = null
+  let seGainNode = null
+  let seUnlockInstalled = false
+  function isHttpProtocol(){ try{ return /^https?:$/i.test(location.protocol) }catch(e){ return false } }
+  function installAudioContextUnlockers(){
+    if(seUnlockInstalled) return
+    seUnlockInstalled = true
+    const resume = ()=>{ try{ if(seAudioCtx && seAudioCtx.state === 'suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){} }
+    ;['pointerdown','click','touchstart','keydown'].forEach(ev=>{ try{ window.addEventListener(ev, resume, { passive:true }) }catch(e){} })
   }
+  async function initWebAudioForSE(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext
+      if(!AC) return false
+      seAudioCtx = seAudioCtx || new AC()
+      seGainNode = seGainNode || seAudioCtx.createGain()
+      try{ seGainNode.gain.value = 1.0 }catch(e){}
+      try{ seGainNode.connect(seAudioCtx.destination) }catch(e){}
+      installAudioContextUnlockers()
+      if(!se || !se.src || !isHttpProtocol()){ seAudioMode='html'; return false }
+      if(seAudioBuffer){ seAudioMode='webaudio'; return true }
+      const res = await fetch(se.src, { cache:'force-cache' })
+      const arr = await res.arrayBuffer()
+      seAudioBuffer = await new Promise((resolve, reject)=>{ try{ seAudioCtx.decodeAudioData(arr, resolve, reject) }catch(e){ reject(e) } })
+      seAudioMode = 'webaudio'
+      return true
+    }catch(e){ seAudioMode='html'; return false }
+  }
+  function tryPlaySEWebAudio(){
+    try{
+      if(seAudioMode !== 'webaudio' || !seAudioCtx || !seAudioBuffer || !seGainNode) return false
+      if(seAudioCtx.state === 'suspended'){ try{ seAudioCtx.resume().catch(()=>{}) }catch(e){} }
+      const src = seAudioCtx.createBufferSource(); src.buffer = seAudioBuffer; src.connect(seGainNode); src.start(0)
+      return true
+    }catch(e){ return false }
+  }
+  function ensureSEPool(){
+    try{
+      if(sePool && sePool.length) return sePool
+      if(!se) { sePool = []; return sePool }
+      sePool = [se]
+      for(let i=1;i<5;i++){
+        const a = se.cloneNode(true)
+        try{ a.removeAttribute('id') }catch(e){}
+        try{ a.preload = 'auto' }catch(e){}
+        try{ a.setAttribute('playsinline','') }catch(e){}
+        try{ document.body.appendChild(a) }catch(e){}
+        try{ a.load() }catch(e){}
+        sePool.push(a)
+      }
+      return sePool
+    }catch(e){ sePool = se ? [se] : []; return sePool }
+  }
+  function playSE(){
+    try{
+      if(playSE._busy) return
+      playSE._busy = true
+      setTimeout(()=>{ playSE._busy = false }, 180)
+      if(tryPlaySEWebAudio()) return
+      const pool = ensureSEPool(); if(!pool.length) return
+      let el = null
+      for(let i=0;i<pool.length;i++){
+        const a = pool[i]
+        try{ if(a.paused || a.ended || (a.currentTime||0) === 0){ el = a; break } }catch(e){}
+      }
+      if(!el) el = pool[0]
+      try{ el.currentTime = 0 }catch(e){}
+      const p = (function(){ try{ return el.play() }catch(e){ return null } })()
+      if(p && p.catch){ p.catch(()=>{ try{ el.load(); el.play().catch(()=>{}) }catch(e){} }) }
+    }catch(e){}
+  }
+  try{ initWebAudioForSE().catch(()=>{}) }catch(e){}
+  try{ document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ try{ const pool=ensureSEPool(); pool.forEach(a=>{ try{ a.load() }catch(e){} }) }catch(e){}; try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){} } }) }catch(e){}
 
   async function activate() {
 
@@ -48,8 +112,10 @@ window.addEventListener('load', () => {
       if(screen) screen.style.pointerEvents = 'none';
       setTimeout(()=>{ btn._locked = false }, 2000)
     }catch(e){}
-    btn.classList.add('pressed')
-    playSE()
+  btn.classList.add('pressed')
+  // クリック時は AudioContext の再開を試みる
+  try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
+  playSE()
 
     const api = window.transitionAPI
     try{ sessionStorage.setItem('start_initiated', '1') }catch(e){}

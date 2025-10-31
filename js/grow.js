@@ -109,6 +109,202 @@
   const btnFollow = document.getElementById('btn-follow')
   const btnSleep = document.getElementById('btn-sleep')
 
+  // UIボタンSEの堅牢化（WebAudio優先 + HTMLAudioプール）
+  let seBtnPool = null
+  let seBtnAudioMode = 'html'
+  let seBtnAudioCtx = null
+  let seBtnAudioBuffer = null
+  let seBtnGainNode = null
+  let seBtnUnlockInstalled = false
+  function seBtnIsHttp(){ try{ return /^https?:$/i.test(location.protocol) }catch(e){ return false } }
+  function installSeBtnUnlockers(){
+    if(seBtnUnlockInstalled) return
+    seBtnUnlockInstalled = true
+    const resume = ()=>{ try{ if(seBtnAudioCtx && seBtnAudioCtx.state === 'suspended'){ seBtnAudioCtx.resume().catch(()=>{}) } }catch(e){} }
+    ;['pointerdown','click','touchstart','keydown'].forEach(ev=>{ try{ window.addEventListener(ev, resume, { passive:true }) }catch(e){} })
+  }
+  async function initWebAudioForUIButtonSE(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext
+      if(!AC) return false
+      seBtnAudioCtx = seBtnAudioCtx || new AC()
+      seBtnGainNode = seBtnGainNode || seBtnAudioCtx.createGain()
+      try{ seBtnGainNode.gain.value = 1.0 }catch(e){}
+      try{ seBtnGainNode.connect(seBtnAudioCtx.destination) }catch(e){}
+      installSeBtnUnlockers()
+      if(!seButton || !seButton.src || !seBtnIsHttp()){ seBtnAudioMode='html'; return false }
+      if(seBtnAudioBuffer){ seBtnAudioMode='webaudio'; return true }
+      const res = await fetch(seButton.src, { cache:'force-cache' })
+      const arr = await res.arrayBuffer()
+      seBtnAudioBuffer = await new Promise((resolve, reject)=>{ try{ seBtnAudioCtx.decodeAudioData(arr, resolve, reject) }catch(e){ reject(e) } })
+      seBtnAudioMode = 'webaudio'
+      return true
+    }catch(e){ seBtnAudioMode='html'; return false }
+  }
+  function tryPlayUIButtonSEWebAudio(){
+    try{
+      if(seBtnAudioMode !== 'webaudio' || !seBtnAudioCtx || !seBtnAudioBuffer || !seBtnGainNode) return false
+      if(seBtnAudioCtx.state === 'suspended'){ try{ seBtnAudioCtx.resume().catch(()=>{}) }catch(e){} }
+      const src = seBtnAudioCtx.createBufferSource(); src.buffer = seBtnAudioBuffer; src.connect(seBtnGainNode); src.start(0)
+      return true
+    }catch(e){ return false }
+  }
+  function ensureUIButtonSEPool(){
+    try{
+      if(seBtnPool && seBtnPool.length) return seBtnPool
+      if(!seButton) { seBtnPool = []; return seBtnPool }
+      seBtnPool = [seButton]
+      for(let i=1;i<5;i++){
+        const a = seButton.cloneNode(true)
+        try{ a.removeAttribute('id') }catch(e){}
+        try{ a.preload = 'auto' }catch(e){}
+        try{ a.setAttribute('playsinline','') }catch(e){}
+        try{ document.body.appendChild(a) }catch(e){}
+        try{ a.load() }catch(e){}
+        seBtnPool.push(a)
+      }
+      return seBtnPool
+    }catch(e){ seBtnPool = seButton ? [seButton] : []; return seBtnPool }
+  }
+  function playUIButtonSE(){
+    try{
+      if(playUIButtonSE._busy) return
+      playUIButtonSE._busy = true
+      setTimeout(()=>{ playUIButtonSE._busy = false }, 180)
+      if(tryPlayUIButtonSEWebAudio()) return
+      const pool = ensureUIButtonSEPool(); if(!pool.length) return
+      let el = null
+      for(let i=0;i<pool.length;i++){
+        const a = pool[i]
+        try{ if(a.paused || a.ended || (a.currentTime||0) === 0){ el = a; break } }catch(e){}
+      }
+      if(!el) el = pool[0]
+      try{ el.currentTime = 0 }catch(e){}
+      const p = (function(){ try{ return el.play() }catch(e){ return null } })()
+      if(p && p.catch){ p.catch(()=>{ try{ el.load(); el.play().catch(()=>{}) }catch(e){} }) }
+    }catch(e){}
+  }
+  try{ initWebAudioForUIButtonSE().catch(()=>{}) }catch(e){}
+  try{ document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ try{ const pool=ensureUIButtonSEPool(); pool.forEach(a=>{ try{ a.load() }catch(e){} }) }catch(e){}; try{ if(seBtnAudioCtx && seBtnAudioCtx.state==='suspended'){ seBtnAudioCtx.resume().catch(()=>{}) } }catch(e){} } }) }catch(e){}
+
+  // --- 演出SE（効果音）用の堅牢プレイヤ ---
+  const SFX = {
+    ctx: null,
+    gainNode: null,
+    buffers: {}, // id -> AudioBuffer
+    pools: {},   // id -> [HTMLAudioElement]
+    lastPlayAt: {}, // id -> timestamp
+    preferHtml: { 'se-heart': true, 'se-vessel-crack1': true, 'se-vessel-crack3': true },
+    unlockInstalled: false
+  }
+  function sfxIsHttp(){ try{ return /^https?:$/i.test(location.protocol) }catch(e){ return false } }
+  function sfxInstallUnlockers(){
+    if(SFX.unlockInstalled) return
+    SFX.unlockInstalled = true
+    const resume = ()=>{ try{ if(SFX.ctx && SFX.ctx.state === 'suspended'){ SFX.ctx.resume().catch(()=>{}) } }catch(e){} }
+    ;['pointerdown','click','touchstart','keydown'].forEach(ev=>{ try{ window.addEventListener(ev, resume, { passive:true }) }catch(e){} })
+  }
+  async function sfxEnsureContext(){
+    try{
+      if(SFX.ctx) return SFX.ctx
+      const AC = window.AudioContext || window.webkitAudioContext
+      if(!AC) return null
+      SFX.ctx = new AC()
+      SFX.gainNode = SFX.ctx.createGain()
+      try{ SFX.gainNode.gain.value = 1.0 }catch(e){}
+      try{ SFX.gainNode.connect(SFX.ctx.destination) }catch(e){}
+      sfxInstallUnlockers()
+      return SFX.ctx
+    }catch(e){ return null }
+  }
+  async function sfxDecodeIfNeeded(id){
+    try{
+      if(SFX.buffers[id]) return true
+      const el = document.getElementById(id)
+      if(!el || !el.src || !sfxIsHttp()) return false
+      const ctx = await sfxEnsureContext(); if(!ctx) return false
+      const res = await fetch(el.src, { cache:'force-cache' })
+      const arr = await res.arrayBuffer()
+      const buf = await new Promise((resolve, reject)=>{ try{ ctx.decodeAudioData(arr, resolve, reject) }catch(e){ reject(e) } })
+      SFX.buffers[id] = buf
+      return true
+    }catch(e){ return false }
+  }
+  function sfxEnsureHtmlPool(id, size){
+    try{
+      if(SFX.pools[id] && SFX.pools[id].length) return SFX.pools[id]
+      const el = document.getElementById(id)
+      if(!el) { SFX.pools[id] = []; return SFX.pools[id] }
+      const pool = [el]
+      const n = Math.max(2, Math.min(5, size || 3))
+      for(let i=1;i<n;i++){
+        const a = el.cloneNode(true)
+        try{ a.removeAttribute('id') }catch(e){}
+        try{ a.preload = 'auto' }catch(e){}
+        try{ a.setAttribute('playsinline','') }catch(e){}
+        try{ document.body.appendChild(a) }catch(e){}
+        try{ a.load() }catch(e){}
+        pool.push(a)
+      }
+      SFX.pools[id] = pool
+      return pool
+    }catch(e){ SFX.pools[id] = []; return SFX.pools[id] }
+  }
+  function sfxTryPlayWebAudio(id){
+    try{
+      const buf = SFX.buffers[id]
+      const ctx = SFX.ctx
+      if(!buf || !ctx || !SFX.gainNode) return false
+      if(ctx.state === 'suspended'){ try{ ctx.resume().catch(()=>{}) }catch(e){} }
+      const src = ctx.createBufferSource(); src.buffer = buf; src.connect(SFX.gainNode); src.start(0)
+      return true
+    }catch(e){ return false }
+  }
+  function sfxPlayHtmlFromPool(id){
+    try{
+      const pool = sfxEnsureHtmlPool(id, 3)
+      if(!pool.length) return false
+      let el = null
+      for(let i=0;i<pool.length;i++){
+        const a = pool[i]
+        try{ if(a.paused || a.ended || (a.currentTime||0) === 0){ el = a; break } }catch(e){}
+      }
+      if(!el) el = pool[0]
+      try{ el.currentTime = 0 }catch(e){}
+      const p = (function(){ try{ return el.play() }catch(e){ return null } })()
+      if(p && p.catch){ p.catch(()=>{ try{ el.load(); el.play().catch(()=>{}) }catch(e){} }) }
+      return true
+    }catch(e){ return false }
+  }
+  async function playSfx(id){
+    try{
+      // 軽いスロットル（同一idを短時間に多重発火しない）
+      const now = Date.now()
+      const last = SFX.lastPlayAt[id] || 0
+      if(now - last < 140) return
+      SFX.lastPlayAt[id] = now
+
+      // アンプで増幅しているSEはHTMLAudio優先（既存の音量バランス維持）
+      const preferHtml = !!SFX.preferHtml[id]
+      if(!preferHtml && sfxIsHttp()){
+        const ok = SFX.buffers[id] ? true : (await sfxDecodeIfNeeded(id))
+        if(ok && sfxTryPlayWebAudio(id)) return
+      }
+      sfxPlayHtmlFromPool(id)
+    }catch(e){}
+  }
+  async function playSfxAndWait(id){
+    try{
+      const el = document.getElementById(id)
+      let durMs = 900
+      try{ if(el && el.duration && isFinite(el.duration) && el.duration>0) durMs = Math.round(el.duration*1000) }catch(e){}
+      await (async()=>{ try{ await playSfx(id) }catch(e){} })()
+      await new Promise(r=> setTimeout(r, durMs + 60))
+    }catch(e){}
+  }
+  try{ sfxEnsureContext().catch(()=>{}) }catch(e){}
+  try{ document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ try{ if(SFX.ctx && SFX.ctx.state==='suspended'){ SFX.ctx.resume().catch(()=>{}) } }catch(e){}; try{ Object.keys(SFX.pools||{}).forEach(id=>{ try{ (SFX.pools[id]||[]).forEach(a=> a.load && a.load()) }catch(e){} }) }catch(e){} } }) }catch(e){}
+
   let day = 1
   let mana = 2
   let temp = 2
@@ -368,12 +564,20 @@
     return new Promise((resolve)=>{
       try{
         if(!el) return resolve()
+        const id = (el && el.id) ? String(el.id) : ''
+        if(id){
+          // 演出SEはSFXプレイヤで再生し、概算の長さで待機
+          ;(async()=>{ try{ await playSfxAndWait(id) }catch(e){}; resolve() })()
+          return
+        }
+      }catch(e){}
+      try{
+        // フォールバック: 素のHTMLAudioで再生
         try{ el.currentTime = 0 }catch(e){}
         const p = el.play()
         let resolved = false
         const onEnd = ()=>{ if(resolved) return; resolved = true; try{ el.removeEventListener('ended', onEnd) }catch(e){}; resolve() }
         try{ el.addEventListener('ended', onEnd) }catch(e){}
-
         const fallback = Math.max(800, (el.duration && isFinite(el.duration) ? Math.round(el.duration*1000) : 800))
         setTimeout(()=> onEnd(), fallback + 50)
         if(p && p.then) p.catch(()=>{})
@@ -861,7 +1065,7 @@
     setTimeout(()=>{
       if(bloodSplash) (bloodSplash.src='assets/blood/04_blood_hit.png')
 
-      try{ if(seBlood){ seBlood.currentTime = 0; seBlood.play().catch(()=>{}) } }catch(e){}
+  try{ playSfx('se-blood-drop') }catch(e){}
       try{
         const prevMana = (typeof mana === 'number') ? mana : 0
         const newMana = Math.min(20, prevMana + 2)
@@ -995,7 +1199,7 @@
   setTimeout(()=>{
         try{ bhimaHand && (bhimaHand.src = 'assets/bhima_hand/warming/03_bhima_warm_hold.png') }catch(e){}
 
-        try{ const seHeart = document.getElementById('se-heart'); if(seHeart){ seHeart.currentTime = 0; seHeart.play().catch(()=>{}) } }catch(e){}
+  try{ playSfx('se-heart') }catch(e){}
 
         try{
           const hold = (typeof TIMINGS.lightMaxHold === 'number') ? TIMINGS.lightMaxHold : 600
@@ -1131,8 +1335,8 @@
   try{ const dd = (typeof TIMINGS.vesselDialogDelay === 'number') ? TIMINGS.vesselDialogDelay : 60; await new Promise(r=>setTimeout(r, dd)) }catch(e){}
 
         try{
-          if(level >= 3){ seVessel3 && seVessel3.currentTime === 0; seVessel3 && seVessel3.play().catch(()=>{}) }
-          else { seVessel1 && seVessel1.currentTime === 0; seVessel1 && seVessel1.play().catch(()=>{}) }
+          if(level >= 3){ playSfx('se-vessel-crack3') }
+          else { playSfx('se-vessel-crack1') }
         }catch(e){}
 
         try{ if(showDialogFor){ const p = showDialogFor('utuwa', Math.min(3, level)); if(p && p.then) await p } }catch(e){}
@@ -1171,7 +1375,8 @@
     if(_navigating || busy) return
     setBusy(true, btnBlood)
     e && e.preventDefault()
-    try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+    try{ if(seBtnAudioCtx && seBtnAudioCtx.state==='suspended'){ seBtnAudioCtx.resume().catch(()=>{}) } }catch(e){}
+    playUIButtonSE()
 
     const prev = mana
 
@@ -1191,7 +1396,7 @@
         let dlgP = null
         try{ dlgP = showDialogFor('innga', Math.min(3, karma)) }catch(e){ dlgP = null }
 
-        try{ if(seCause3){ seCause3.currentTime = 0; seCause3.play().catch(()=>{}) } }catch(e){}
+  try{ playSfx('se-cause-break3') }catch(e){}
         if(dlgP && dlgP.then) await dlgP
 
   shakeElement(gaugeKarma)
@@ -1206,7 +1411,7 @@
         manaBreakHandled = false
         return
       }
-      seCause1 && seCause1.play().catch(()=>{})
+  try{ playSfx('se-cause-break1') }catch(e){}
       shakeElement(gaugeKarma)
 
       try{
@@ -1234,7 +1439,8 @@
     if(_navigating || busy) return
     setBusy(true, btnWarm)
     e && e.preventDefault()
-    try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+    try{ if(seBtnAudioCtx && seBtnAudioCtx.state==='suspended'){ seBtnAudioCtx.resume().catch(()=>{}) } }catch(e){}
+    playUIButtonSE()
   const animPromise = showWarmSequence()
   const prev = temp
 
@@ -1251,7 +1457,8 @@
   })
 
   async function doTransitionCheck(target){
-    try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+    try{ if(seBtnAudioCtx && seBtnAudioCtx.state==='suspended'){ seBtnAudioCtx.resume().catch(()=>{}) } }catch(e){}
+    playUIButtonSE()
 
     _navigating = true
     try{ setBusy(true) }catch(e){}
@@ -1282,7 +1489,8 @@
   async function startDaySend(action){
     try{
       setBusy(true)
-      try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+      try{ if(seBtnAudioCtx && seBtnAudioCtx.state==='suspended'){ seBtnAudioCtx.resume().catch(()=>{}) } }catch(e){}
+      playUIButtonSE()
 
       try{ if(bgm){ bgmWasPlayingBeforeDaySend = !bgm.paused; bgm.pause(); } }catch(e){}
 
@@ -1335,7 +1543,8 @@
   btnKitchen && btnKitchen.addEventListener('click', async (e)=>{
     if(_navigating || busy) return
     e && e.preventDefault()
-    try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+    try{ if(seBtnAudioCtx && seBtnAudioCtx.state==='suspended'){ seBtnAudioCtx.resume().catch(()=>{}) } }catch(e){}
+    playUIButtonSE()
     const okMana = (mana >= 8)
     const okTemp = (temp >= 8)
 
@@ -1351,7 +1560,8 @@
   btnFollow && btnFollow.addEventListener('click', async (e)=>{
     if(_navigating || busy) return
     e && e.preventDefault()
-    try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+    try{ if(seBtnAudioCtx && seBtnAudioCtx.state==='suspended'){ seBtnAudioCtx.resume().catch(()=>{}) } }catch(e){}
+    playUIButtonSE()
     const okMana = (mana >= 8)
     const okTemp = (temp >= 8)
 
@@ -1375,7 +1585,8 @@
       try{ window.__growDialogsSuppressed = true; setTimeout(()=>{ try{ window.__growDialogsSuppressed = false }catch(e){} }, SUPPRESS_MS + 200) }catch(e){}
     }catch(e){}
     e && e.preventDefault()
-    try{ seButton && (seButton.currentTime=0, seButton.play().catch(()=>{})) }catch(e){}
+  try{ if(seBtnAudioCtx && seBtnAudioCtx.state==='suspended'){ seBtnAudioCtx.resume().catch(()=>{}) } }catch(e){}
+  playUIButtonSE()
 
   try{ if(screen && screen.classList){ screen.classList.add('sleep-fade') } }catch(e){}
   try{ if(window.transitionAPI && window.transitionAPI.fadeOutThen) window.transitionAPI.fadeOutThen(()=>{}, 800); else if(screen && screen.classList) screen.classList.remove('visible') }catch(e){}

@@ -21,6 +21,84 @@
   const bgm = ensureBgm()
   const se = document.getElementById('se-button')
 
+  // SE 再生の堅牢化（WebAudio 優先 + HTMLAudio プール）
+  let sePool = null
+  let seAudioMode = 'html'
+  let seAudioCtx = null
+  let seAudioBuffer = null
+  let seGainNode = null
+  let seUnlockInstalled = false
+  function isHttpProtocol(){ try{ return /^https?:$/i.test(location.protocol) }catch(e){ return false } }
+  function installAudioContextUnlockers(){
+    if(seUnlockInstalled) return
+    seUnlockInstalled = true
+    const resume = ()=>{ try{ if(seAudioCtx && seAudioCtx.state === 'suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){} }
+    ;['pointerdown','click','touchstart','keydown'].forEach(ev=>{ try{ window.addEventListener(ev, resume, { passive:true }) }catch(e){} })
+  }
+  async function initWebAudioForSE(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext
+      if(!AC) return false
+      seAudioCtx = seAudioCtx || new AC()
+      seGainNode = seGainNode || seAudioCtx.createGain()
+      try{ seGainNode.gain.value = 1.0 }catch(e){}
+      try{ seGainNode.connect(seAudioCtx.destination) }catch(e){}
+      installAudioContextUnlockers()
+      if(!se || !se.src || !isHttpProtocol()){ seAudioMode='html'; return false }
+      if(seAudioBuffer){ seAudioMode='webaudio'; return true }
+      const res = await fetch(se.src, { cache:'force-cache' })
+      const arr = await res.arrayBuffer()
+      seAudioBuffer = await new Promise((resolve, reject)=>{ try{ seAudioCtx.decodeAudioData(arr, resolve, reject) }catch(e){ reject(e) } })
+      seAudioMode = 'webaudio'
+      return true
+    }catch(e){ seAudioMode='html'; return false }
+  }
+  function tryPlaySEWebAudio(){
+    try{
+      if(seAudioMode !== 'webaudio' || !seAudioCtx || !seAudioBuffer || !seGainNode) return false
+      if(seAudioCtx.state === 'suspended'){ try{ seAudioCtx.resume().catch(()=>{}) }catch(e){} }
+      const src = seAudioCtx.createBufferSource(); src.buffer = seAudioBuffer; src.connect(seGainNode); src.start(0)
+      return true
+    }catch(e){ return false }
+  }
+  function ensureSEPool(){
+    try{
+      if(sePool && sePool.length) return sePool
+      if(!se) { sePool = []; return sePool }
+      sePool = [se]
+      for(let i=1;i<5;i++){
+        const a = se.cloneNode(true)
+        try{ a.removeAttribute('id') }catch(e){}
+        try{ a.preload = 'auto' }catch(e){}
+        try{ a.setAttribute('playsinline','') }catch(e){}
+        try{ document.body.appendChild(a) }catch(e){}
+        try{ a.load() }catch(e){}
+        sePool.push(a)
+      }
+      return sePool
+    }catch(e){ sePool = se ? [se] : []; return sePool }
+  }
+  function playSE(){
+    try{
+      if(playSE._busy) return
+      playSE._busy = true
+      setTimeout(()=>{ playSE._busy = false }, 180)
+      if(tryPlaySEWebAudio()) return
+      const pool = ensureSEPool(); if(!pool.length) return
+      let el = null
+      for(let i=0;i<pool.length;i++){
+        const a = pool[i]
+        try{ if(a.paused || a.ended || (a.currentTime||0) === 0){ el = a; break } }catch(e){}
+      }
+      if(!el) el = pool[0]
+      try{ el.currentTime = 0 }catch(e){}
+      const p = (function(){ try{ return el.play() }catch(e){ return null } })()
+      if(p && p.catch){ p.catch(()=>{ try{ el.load(); el.play().catch(()=>{}) }catch(e){} }) }
+    }catch(e){}
+  }
+  try{ initWebAudioForSE().catch(()=>{}) }catch(e){}
+  try{ document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ try{ const pool=ensureSEPool(); pool.forEach(a=>{ try{ a.load() }catch(e){} }) }catch(e){}; try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){} } }) }catch(e){}
+
   const lightImg = document.getElementById('light-frame')
   const duryImg = document.getElementById('duryodhana-frame')
   const duryEye = document.getElementById('duryodhana-eye')
@@ -148,6 +226,7 @@
       e.preventDefault()
       // クリックを機にBGMを解禁（iOS Safari向け）
       try{ if(bgm){ bgm.volume = 0.7; if(bgm.paused) bgm.play().catch(()=>{}) } }catch(e){}
+      try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
       try{
         if(btnBegin._locked) return; btnBegin._locked = true;
         btnBegin.classList.add('disabled'); btnBegin.setAttribute('aria-disabled','true')
@@ -158,7 +237,7 @@
           try{ if(screen) screen.style.pointerEvents = '' }catch(e){}
         }, 2000)
       }catch(e){}
-      try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
+      playSE()
       fadeOutThen(()=>{ stopAnims(); location.href = 'prologue.html' })
     })
   }
@@ -167,6 +246,7 @@
     btnExit.addEventListener('click', (e)=>{
       e.preventDefault()
       try{ if(bgm){ bgm.volume = 0.7; if(bgm.paused) bgm.play().catch(()=>{}) } }catch(e){}
+      try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
       try{
         if(btnExit._locked) return; btnExit._locked = true;
         btnExit.classList.add('disabled'); btnExit.setAttribute('aria-disabled','true')
@@ -177,7 +257,7 @@
           try{ if(screen) screen.style.pointerEvents = '' }catch(e){}
         }, 2000)
       }catch(e){}
-      try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
+      playSE()
       alert('ゲームを終了するには画面を閉じて下さい')
     })
   }
@@ -186,6 +266,7 @@
     btnCredit.addEventListener('click', (e)=>{
       e.preventDefault()
       try{ if(bgm){ bgm.volume = 0.7; if(bgm.paused) bgm.play().catch(()=>{}) } }catch(e){}
+      try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
       try{
         if(btnCredit._locked) return; btnCredit._locked = true;
         btnCredit.classList.add('disabled'); btnCredit.setAttribute('aria-disabled','true')
@@ -196,7 +277,7 @@
           try{ if(screen) screen.style.pointerEvents = '' }catch(e){}
         }, 2000)
       }catch(e){}
-      try{ if(se){ se.currentTime=0; se.play().catch(()=>{}) } }catch(e){}
+      playSE()
       fadeOutThen(()=>{ stopAnims(); location.href = 'credit.html' })
     })
   }

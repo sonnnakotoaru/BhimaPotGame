@@ -23,6 +23,19 @@
   let _animating = false
   let _navigating = false
 
+  // ボタンSEの堅牢化（WebAudio + HTMLAudioプール）
+  let sePool = null
+  let seAudioMode = 'html'
+  let seAudioCtx = null
+  let seAudioBuffer = null
+  let seGainNode = null
+  let seUnlockInstalled = false
+  function isHttp(){ try{ return /^https?:$/i.test(location.protocol) }catch(e){ return false } }
+  function installUnlockers(){ if(seUnlockInstalled) return; seUnlockInstalled = true; const resume = ()=>{ try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){} }; ['pointerdown','click','touchstart','keydown'].forEach(ev=>{ try{ window.addEventListener(ev, resume, { passive:true }) }catch(e){} }) }
+  async function initWebAudioSE(){ try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false; seAudioCtx=seAudioCtx||new AC(); seGainNode=seGainNode||seAudioCtx.createGain(); try{ seGainNode.gain.value=1.0 }catch(e){}; try{ seGainNode.connect(seAudioCtx.destination) }catch(e){}; installUnlockers(); const el=document.getElementById('se-button'); if(!el||!el.src||!isHttp()){ seAudioMode='html'; return false } if(seAudioBuffer){ seAudioMode='webaudio'; return true } const res=await fetch(el.src,{cache:'force-cache'}); const arr=await res.arrayBuffer(); seAudioBuffer=await new Promise((resolve,reject)=>{ try{ seAudioCtx.decodeAudioData(arr, resolve, reject) }catch(e){ reject(e) } }); seAudioMode='webaudio'; return true }catch(e){ seAudioMode='html'; return false } }
+  function tryPlaySEWebAudio(){ try{ if(seAudioMode!=='webaudio'||!seAudioCtx||!seAudioBuffer||!seGainNode) return false; if(seAudioCtx.state==='suspended'){ try{ seAudioCtx.resume().catch(()=>{}) }catch(e){} } const src=seAudioCtx.createBufferSource(); src.buffer=seAudioBuffer; src.connect(seGainNode); src.start(0); return true }catch(e){ return false } }
+  function ensureSEPool(){ try{ if(sePool&&sePool.length) return sePool; const el=document.getElementById('se-button'); if(!el){ sePool=[]; return sePool } sePool=[el]; for(let i=1;i<5;i++){ const a=el.cloneNode(true); try{ a.removeAttribute('id') }catch(e){}; try{ a.preload='auto' }catch(e){}; try{ a.setAttribute('playsinline','') }catch(e){}; try{ document.body.appendChild(a) }catch(e){}; try{ a.load() }catch(e){}; sePool.push(a) } return sePool }catch(e){ sePool=[]; return sePool } }
+
   function fadeOutLight(){
     light = light || document.getElementById('bv-light')
     if(!light) return
@@ -32,7 +45,24 @@
     setTimeout(()=>{ try{ light.style.opacity = 0 }catch(e){} }, 20)
   }
 
-  function playSE(){ const se = document.getElementById('se-button'); if(!se) return; try{ se.currentTime = 0; se.play().catch(()=>{}) }catch(e){} }
+  function playSE(){
+    try{
+      if(playSE._busy) return
+      playSE._busy = true
+      setTimeout(()=>{ playSE._busy = false }, 180)
+      if(tryPlaySEWebAudio()) return
+      const pool = ensureSEPool(); if(!pool.length) return
+      let el = null
+      for(let i=0;i<pool.length;i++){
+        const a = pool[i]
+        try{ if(a.paused || a.ended || (a.currentTime||0)===0){ el=a; break } }catch(e){}
+      }
+      if(!el) el = pool[0]
+      try{ el.currentTime = 0 }catch(e){}
+      const p = (function(){ try{ return el.play() }catch(e){ return null } })()
+      if(p && p.catch){ p.catch(()=>{ try{ el.load(); el.play().catch(()=>{}) }catch(e){} }) }
+    }catch(e){}
+  }
   function tryPlayBgm(){ if(!bgm) return; bgm.volume = 0.6; bgm.play().catch(()=>{}) }
 
   function readRootMs(varName, fallbackMs){
@@ -176,6 +206,7 @@
       const lockMs = Math.max(800, bodyFadeOutMs + bodyFadeInMs + 80)
       if(!lockButtons(lockMs)) return
       try{ btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, lockMs) }catch(e){}
+      try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
       playSE(); next()
     }; btnNext.addEventListener('click', btnNext._bve_handler) }
   if(btnRestart){ btnRestart._bve_handler = ()=>{ if(_navigating) return; _navigating = true; if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){}; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else {

@@ -32,7 +32,36 @@
     }catch(e){ return true }
   }
 
-  function playSE(){ try{ if(seButton){ seButton.currentTime = 0; seButton.play().catch(()=>{}) } }catch(e){} }
+  // SE（ボタン）堅牢化: WebAudio + HTMLAudio プール
+  let sePool = null
+  let seAudioMode = 'html'
+  let seAudioCtx = null
+  let seAudioBuffer = null
+  let seGainNode = null
+  let seUnlockInstalled = false
+  function isHttp(){ try{ return /^https?:$/i.test(location.protocol) }catch(e){ return false } }
+  function installUnlockers(){ if(seUnlockInstalled) return; seUnlockInstalled = true; const resume=()=>{ try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){} }; ['pointerdown','click','touchstart','keydown'].forEach(ev=>{ try{ window.addEventListener(ev, resume, { passive:true }) }catch(e){} }) }
+  async function initWebAudioSE(){ try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false; seAudioCtx=seAudioCtx||new AC(); seGainNode=seGainNode||seAudioCtx.createGain(); try{ seGainNode.gain.value=1.0 }catch(e){}; try{ seGainNode.connect(seAudioCtx.destination) }catch(e){}; installUnlockers(); if(!seButton||!seButton.src||!isHttp()){ seAudioMode='html'; return false } if(seAudioBuffer){ seAudioMode='webaudio'; return true } const res=await fetch(seButton.src,{cache:'force-cache'}); const arr=await res.arrayBuffer(); seAudioBuffer=await new Promise((resolve,reject)=>{ try{ seAudioCtx.decodeAudioData(arr, resolve, reject) }catch(e){ reject(e) } }); seAudioMode='webaudio'; return true }catch(e){ seAudioMode='html'; return false } }
+  function tryPlaySEWebAudio(){ try{ if(seAudioMode!=='webaudio'||!seAudioCtx||!seAudioBuffer||!seGainNode) return false; if(seAudioCtx.state==='suspended'){ try{ seAudioCtx.resume().catch(()=>{}) }catch(e){} } const src=seAudioCtx.createBufferSource(); src.buffer=seAudioBuffer; src.connect(seGainNode); src.start(0); return true }catch(e){ return false } }
+  function ensureSEPool(){ try{ if(sePool&&sePool.length) return sePool; if(!seButton){ sePool=[]; return sePool } sePool=[seButton]; for(let i=1;i<5;i++){ const a=seButton.cloneNode(true); try{ a.removeAttribute('id') }catch(e){}; try{ a.preload='auto' }catch(e){}; try{ a.setAttribute('playsinline','') }catch(e){}; try{ document.body.appendChild(a) }catch(e){}; try{ a.load() }catch(e){}; sePool.push(a) } return sePool }catch(e){ sePool=[]; return sePool } }
+  function playSE(){
+    try{
+      if(playSE._busy) return
+      playSE._busy = true
+      setTimeout(()=>{ playSE._busy = false }, 180)
+      if(tryPlaySEWebAudio()) return
+      const pool = ensureSEPool(); if(!pool.length) return
+      let el = null
+      for(let i=0;i<pool.length;i++){
+        const a = pool[i]
+        try{ if(a.paused || a.ended || (a.currentTime||0)===0){ el=a; break } }catch(e){}
+      }
+      if(!el) el = pool[0]
+      try{ el.currentTime = 0 }catch(e){}
+      const p = (function(){ try{ return el.play() }catch(e){ return null } })()
+      if(p && p.catch){ p.catch(()=>{ try{ el.load(); el.play().catch(()=>{}) }catch(e){} }) }
+    }catch(e){}
+  }
   function playBgm(){ try{ if(bgm){ bgm.volume = 0.6; bgm.currentTime = 0; bgm.play().catch(()=>{}) } }catch(e){} }
 
   function showImage(i){
