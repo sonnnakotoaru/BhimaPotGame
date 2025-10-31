@@ -23,7 +23,8 @@
       try{
         b = document.createElement('audio')
         b.id = 'bgm'
-        b.src = 'assets/sound/bgm/bgm_start.mp3'
+  // bgm_start.mp3 と bgm_normal_piano.mp3 は同一音源。参照を bgm_normal_piano.mp3 に統一。
+  b.src = 'assets/sound/bgm/bgm_normal_piano.mp3'
         b.preload = 'auto'
         b.loop = true
         document.body.appendChild(b)
