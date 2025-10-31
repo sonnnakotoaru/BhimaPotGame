@@ -1,50 +1,35 @@
 <!DOCTYPE html>
-<!--
-  index.html
-  - 小学生でも分かる説明:
-    ・このファイルは「注意ページ」のテンプレートです。
-    ・1280x720 を基準にした見た目と、ボタンで次へ行く仕組みがあります。
--->
-<!--
-  index.html (規範テンプレート)
-  - とてもシンプルな注意ページのテンプレートです。
-  - 基本は 1280x720 を基準に作っています。
-  - 余計な仕組みは入れず、ボタンで次の画面に移動するだけにします。
--->
+
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>ビーマの壺</title>
-    <!-- スタイルは外部にまとめる -->
+
     <link rel="stylesheet" href="css/index.css">
-  <!-- 統一ファビコン -->
+
   <link rel="icon" href="assets/ui_text/notice/48×48.png" type="image/png">
   </head>
   <body>
-    <!-- ゲーム画面の枠（1280x720 を基準） -->
+
     <div id="screen" class="fade-target">
-      <!-- 背景は .bg に CSS で指定します -->
+
       <div class="bg" aria-hidden="true"></div>
 
-      <!-- ここにタイトルや本文、ボタンを置きます -->
       <div class="scene-layer" role="dialog" aria-labelledby="notice-title">
-  <!-- タイトル画像（上）および本文を単一ファイルに変更 -->
+
   <img id="scene-title" src="assets/ui_text/notice/01.png" alt="注意：タイトル" />
 
-  <!-- 本文画像（中央）: 単一ファイルを再利用 -->
   <img id="scene-body" src="assets/ui_text/notice/01.png" alt="注意：本文" />
 
-        <!-- すすむボタン: 押すと次（start.html）へいきます -->
         <img id="btn-susumu" class="btn-ui" src="assets/ui_button/base/01_ui_btn_next_normal.png" alt="すすむ">
       </div>
 
-      <!-- 効果音（ボタン用）: 読み込みを早くするため preload 推奨 -->
       <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
     </div>
 
-    <!-- 動きは外部のスクリプトに任せます。中身はシンプルです。 -->
     <script src="js/screen-fit.js"></script>
     <script src="js/index.js"></script>
   </body>
 </html>
+

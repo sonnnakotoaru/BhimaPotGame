@@ -1,82 +1,56 @@
 :root{
-		/* 画面の基本サイズ */
-		--screen-width: 1280px;   /* 普段はこのサイズでデザインします */
+
+		--screen-width: 1280px;
 		--screen-height: 720px;
-		/* 画面全体の簡単なトランジション時間（目安） */
+
 		--transition-duration: 400ms;
-		--prologue-body-fade-in: 600ms;    /* 例: 600ms = 0.6秒でふわっと出す */
-		--prologue-body-fade-out: 400ms;   /* 例: 400ms = 0.4秒で消す */
-		--prologue-body-fade-delay: 120ms; /* フェード前のちょっとした待ち時間 */
-			--prologue-body-opacity-start: 0;  /* 0 = 透明 */
-			--prologue-body-opacity-end: 1;    /* 1 = 完全に見える */
-			--btn-next-left: 1015px;                          /* すすむボタンの横位置 */
-			--btn-next-top: 600px;                           /* すすむボタンの上からの位置（編集しやすい） */
-			--btn-restart-left: 530px;                       /* はじめにもどる（再スタート）ボタンの横位置 */
-			--btn-restart-top: 550px;                        /* 再スタートの上からの位置 */
+		--prologue-body-fade-in: 600ms;
+		--prologue-body-fade-out: 400ms;
+		--prologue-body-fade-delay: 120ms;
+			--prologue-body-opacity-start: 0;
+			--prologue-body-opacity-end: 1;
+			--btn-next-left: 1015px;
+			--btn-next-top: 600px;
+			--btn-restart-left: 530px;
+			--btn-restart-top: 550px;
 }
 
-/* 画面外（余白）も黒。スクロール抑止＋safe-area 対応 */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
 body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);box-sizing:border-box}
 
-/* 全シーン共通: #screen 内のすべての画像をドット補間なしで表示（にじみ防止） */
 #screen img{
 	image-rendering: -moz-crisp-edges;
 	image-rendering: pixelated;
 	image-rendering: crisp-edges;
 }
 
-/* #screen はゲームの『キャンバス』です（絵を置く大きな箱）。
-	- 普段は透明（opacity:0）で、.visible をつけるとふわっと表示されます。
-	- サイズは上で決めた --screen-width / --screen-height を使います。 */
 #screen{position:fixed;left:50%;top:50%;width:var(--screen-width);height:var(--screen-height);box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) ease;transform-origin:center center;transform: translate(-50%,-50%) scale(var(--screen-scale,1));}
 #screen.visible{opacity:1}
 
-/* layers */
 .bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-repeat:no-repeat;background-size:1280px 720px;background-position:center center;z-index:10;pointer-events:none;image-rendering:pixelated}
 .scene-layer{position:absolute;left:0;top:0;width:100%;height:100%;z-index:20;pointer-events:none}
 
-/* UI テキストを置く領域（prologue のパターンに合わせています）
-	- JS は [data-ui-text-container] を探して画像を差し替えます。
-	- 画像は中央に表示して、原寸（1280x720）を基準に表示します。 */
 [data-ui-text-container]{position:absolute;left:0;top:0;width:100%;height:100%;z-index:40;pointer-events:none;display:flex;align-items:center;justify-content:center}
-/* 本文画像: 初期は透明（start）。JS が .show を付けるとフェードインします。 */
+
 .ui-text-image{position:relative;left:0;top:0;transform:none;width:1280px;height:720px;max-width:none;max-height:none;z-index:40;pointer-events:none;image-rendering:pixelated;display:block;opacity: var(--prologue-body-opacity-start);transition: opacity var(--prologue-body-fade-in) ease}
 
-/* キャラクターの画像を置く場所。
-	- 画面の真ん中に置きたいときは left:50%, top:50% と transform で中央揃えにします。*/
 #duryodhana-frame{position:absolute;left:0;top:0;transform:none;width:1280px;height:720px;max-width:none;max-height:none;z-index:30;pointer-events:none;image-rendering:pixelated}
 
-/* タイトル画像
-   - ここはキャンバスの中央にタイトル画像を置きます。
-   - transform:translate(-50%,-50%) で水平方向・垂直方向ともに中央揃えにします。
-   - max-width / max-height を指定して、1280x720 のキャンバス内に収まるようにします。 */
 #distorted-title{position:absolute;left:0;top:0;transform:none;z-index:50;pointer-events:none;width:1280px;height:720px;max-width:none;max-height:none;display:block;image-rendering:pixelated}
 
-/* ボタンの見た目と位置
- 	 - .btn-ui はクリックできる画像ボタン用のクラスです。
- 	 - :active のとき（押しているとき）に明るくなるフィルターを入れています。
- 	 - 各ボタンは :root の --btn-... 変数で位置を指定します。
- 		 ここでは left と top の組み合わせを使うように統一しています。
- 		 top を編集するだけで位置が変わるので調整しやすいです。 */
 .btn-ui{position:absolute;transform:none;pointer-events:auto;cursor:pointer;user-select:none;-webkit-user-drag:none;width:auto;height:auto;z-index:60}
 .btn-ui:active{filter:brightness(1.5)}
-/* 連打防止用: 無効状態 */
-.btn-ui.disabled{ pointer-events:none; cursor:default }
-#btn-next{left:var(--btn-next-left);top:var(--btn-next-top);} /* すすむボタンの位置（left/top） */
-#btn-restart{left:var(--btn-restart-left);top:var(--btn-restart-top);} /* 再スタート用ボタン位置（left/top） */
 
-/* フェード用のヘルパークラス（必要なら JS で切り替えます） */
+.btn-ui.disabled{ pointer-events:none; cursor:default }
+#btn-next{left:var(--btn-next-left);top:var(--btn-next-top);}
+#btn-restart{left:var(--btn-restart-left);top:var(--btn-restart-top);}
+
 .show{opacity: var(--prologue-body-opacity-end); transition: opacity var(--prologue-body-fade-in) ease}
 .hide{opacity: var(--prologue-body-opacity-start); transition: opacity var(--prologue-body-fade-out) ease}
 
 .btn-ui.hidden{display:none !important;opacity:0}
 .btn-ui.show{display:inline-block;opacity:1;transition:opacity 240ms ease}
 
-/* 小さい画面向けの調整:
-	画面が小さいときはキャンバス全体を縮めて表示します。
-	こうするとボタンの位置がずれにくくなります。
-*/
 @media (max-width: 1280px){
   :root{ --screen-fit-w: calc((100vw - 20px) / 1280); --screen-fit-h: calc((100vh - 20px) / 720); }
 	#screen{ width:1280px; height:720px; transform: translate(-50%,-50%) scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
@@ -84,6 +58,5 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
   .scene-layer img, .btn-ui{ max-width:none; height:auto }
 }
 
-/* ユーティリティクラス
-	- 他の場所でも使える「非表示」にするクラス */
 .hidden{display:none !important}
+

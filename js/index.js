@@ -1,28 +1,14 @@
-/*
-  index.js
-  - 小学生でも分かる説明:
-    ・このファイルは「注意ページ（index.html）」の動きを作ります。
-    ・ボタンを押すと次の画面に移動するだけの、とてもシンプルな仕組みです。
-    ・難しいことは書かないようにして、安心して読めるコードにしています。
-*/
-/**
- * index.js
- * - このファイルは「注意ページ（index.html）」の小さな動きを作ります。
- * - わかりやすくいうと: 「説明を読んだらボタンを押して次へ行く」を実現します。
- */
-
-// ページが全部読み込まれたら画面をフェードインさせるよ
 window.addEventListener('load', () => {
   const screen = document.getElementById('screen');
   const title = document.getElementById('scene-title');
   const body = document.getElementById('scene-body');
-  // CSS 変数を読む小さなヘルパー
+
   const getRootVar = (name, fallback) => { try{ const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fallback }catch(e){ return fallback } }
   if (!screen) return;
-  // 少しだけ待ってから .visible を付けるとフェードインして見えるよ
+
   requestAnimationFrame(() => setTimeout(() => {
     screen.classList.add('visible');
-    // タイトル/本文もフェードイン（opacity のみ）
+
     const endOp = getRootVar('--notice-body-opacity-end','1');
     if(title) title.style.opacity = endOp;
     if(body) body.style.opacity = endOp;
@@ -38,7 +24,6 @@ window.addEventListener('load', () => {
 
   if (!btn) return;
 
-  // ボタン音を鳴らすよ。連打を防ぐために短時間だけ無効にする仕組みがあるよ
   function playSE() {
     if (!se) return
     if(playSE._busy) return
@@ -49,16 +34,12 @@ window.addEventListener('load', () => {
     } catch (e) {
       console.warn('se play failed', e)
     }
-    // 200ms くらいは次の音を鳴らさないようにするよ
+
     setTimeout(()=>{ playSE._busy = false }, 200)
   }
 
-  // ボタンを押したときの動き
-  // 1) ボタンを押した見た目にする
-  // 2) 効果音を鳴らす
-  // 3) フェードアウトして start.html に移動する
   async function activate() {
-    // prevent double activation
+
     try{
       if(btn._locked) return;
       btn._locked = true;
@@ -72,23 +53,23 @@ window.addEventListener('load', () => {
 
     const api = window.transitionAPI
     try{ sessionStorage.setItem('start_initiated', '1') }catch(e){}
-    // ルーターがあるときはそれを使う（より滑らかな遷移のため）
+
     if(window.router && window.router.navigate){
       if(api && api.fadeOutThen){
-        // もし transitionAPI に fadeOutThen があれば、それを使ってフェードさせてから遷移する
+
         api.fadeOutThen(()=>{ window.router.navigate('start.html') }, 400)
       }else{
-        // なければ自分で visible クラスを消してちょっと待ってから遷移するよ
+
         if(screen) screen.classList.remove('visible')
         setTimeout(()=> window.router.navigate('start.html'), 400)
       }
       return
     }
-    // ルーターが無いときの普通の遷移方法
+
     if(api && api.fadeOutNavigate){
       setTimeout(()=> api.fadeOutNavigate('start.html', 400), 20)
     }else{
-      // まず本文をフェードアウトしてから画面フェード→遷移
+
       try{
         const getRootVar = (name, fallback) => { try{ const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fallback }catch(e){ return fallback } }
         const toMs = (v, fallback) => { if(!v) return fallback||0; v=String(v).trim(); if(v.endsWith('ms')) return Math.round(parseFloat(v)); if(v.endsWith('s')) return Math.round(parseFloat(v)*1000); const n=parseFloat(v); return Number.isFinite(n)?Math.round(n):(fallback||0) }
@@ -135,3 +116,4 @@ window.addEventListener('load', () => {
     });
   });
 })();
+

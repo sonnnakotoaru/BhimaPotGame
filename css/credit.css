@@ -1,12 +1,10 @@
- /* ボタン位置を px 単位で指定する: 1280x720 を基準とします */
 :root{
 	--screen-width: 1280px;
 	--screen-height: 720px;
 	--transition-duration: 400ms;
-	--btn-back-left: 1115px; 
-	--btn-back-top: 630px;   
+	--btn-back-left: 1115px;
+	--btn-back-top: 630px;
 
-	/* 本文画像のフェード調整（JS から参照されます） */
 	--credit-body-fade-in: 600ms;
 	--credit-body-fade-out: 400ms;
 	--credit-body-fade-delay: 120ms;
@@ -14,36 +12,24 @@
 	--credit-body-opacity-end: 1;
 	}
 
-/* 画面外（余白）も黒に固定し、スクロールや余分な余白を抑止。safe-area に配慮 */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
 body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);box-sizing:border-box}
 
-/* 全シーン共通: #screen 内のすべての画像をドット補間なしで表示（にじみ防止） */
 #screen img{
 	image-rendering: -moz-crisp-edges;
 	image-rendering: pixelated;
 	image-rendering: crisp-edges;
 }
 
-/* ゲーム画面の枠: 基準は 1280x720 */
 #screen{position:fixed;left:50%;top:50%;box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) ease;display:block;width:var(--screen-width);height:var(--screen-height);transform-origin:center center;transform: translate(-50%,-50%) scale(var(--screen-scale,1));}
 #screen.visible{opacity:1}
 
-/* 背景: ここで画像を指定します（1280x720 の原寸） */
 .bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-image:url('../assets/bg/01_bg_wayang_normal.png');background-repeat:no-repeat;background-position:center center;background-size:1280px 720px;z-index:0;pointer-events:none;image-rendering:pixelated}
 
-/* scene-layer はキャラやボタンなどを重ねる場所です。
-	pointer-events:none にしておくと、背景の上に置かれていても
-	クリックが届きにくくなるので、ボタン要素だけ pointer-events を有効にします。
-*/
 .scene-layer{position:absolute;left:0;top:0;width:1280px;height:720px;z-index:1;pointer-events:none}
-
-/* テキストや UI の画像は原寸（ピクセル絵）で置くことを想定して、
-	左上を基準に絶対配置し、ピクセル補間を無効化（pixelated）します。 */
 
 .scene-layer img{position:absolute;top:0;left:0;width:auto;height:auto;image-rendering:pixelated}
 
-/* テキスト画像のフェード用（タイトル/本文） */
 #credit-title, #credit-body{
 	opacity: var(--credit-body-opacity-start);
 	transition: opacity var(--credit-body-fade-in) ease var(--credit-body-fade-delay);
@@ -51,21 +37,14 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 .show{ opacity: var(--credit-body-opacity-end); transition: opacity var(--credit-body-fade-in) ease var(--credit-body-fade-delay) }
 .hide{ opacity: var(--credit-body-opacity-start); transition: opacity var(--credit-body-fade-out) ease }
 
-/* ボタンの見た目と操作の設定：クリックできるようにするよ */
 .btn-ui{pointer-events:auto;cursor:pointer}
 .btn-ui:active{filter:brightness(1.5)}
-/* 連打防止用: 無効状態 */
+
 .btn-ui.disabled{ pointer-events:none; cursor:default }
 
-/* 戻るボタン: 位置は変数で調整できるようにする
-	※ ユーザー指定: ボタンはキャンバス上で原寸表示する（幅を%で指定しない） */
 #btn-back{position:absolute;left:var(--btn-back-left);top:var(--btn-back-top);height:auto;transform:translate(-50%,-50%)}
 #btn-back img{width:auto;height:auto;display:block}
 
-/* 小さい画面向けの調整:
-	 画面が小さいときはキャンバス全体を縮めて表示します。
-	 こうするとボタンの位置がずれにくくなります。
-*/
 @media (max-width: 1280px){
 	:root{ --screen-fit-w: calc((100vw - 20px) / 1280); --screen-fit-h: calc((100vh - 20px) / 720); }
 	#screen{ width:1280px; height:720px; transform: translate(-50%,-50%) scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }

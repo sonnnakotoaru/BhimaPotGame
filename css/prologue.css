@@ -1,61 +1,44 @@
-/*
-  prologue.css
-  - 小学生でも分かる説明:
-    ・プロローグ画面（最初の説明ページ）の見た目を決めるファイルです。
-    ・ボタンや本文画像の位置は 1280x720 を基準にしています。
-    ・JS はこのファイルの変数を見て、フェードの速さを変えられます。
-*/
-/* すすむボタン位置を px 単位で指定 (1280x720 基準) */
 :root{
   --screen-width: 1280px;
   --screen-height: 720px;
   --transition-duration: 400ms;
-  /* 本文画像のフェード調整: JS から参照してフェードを制御できます */
-  --prologue-body-fade-in: 600ms;    /* 本文のフェードイン時間（ミリ秒） */
-  --prologue-body-fade-out: 400ms;   /* 本文のフェードアウト時間（ミリ秒） */
-  --prologue-body-fade-delay: 120ms; /* フェード開始の遅延（ミリ秒） */
-  --prologue-body-opacity-start: 0;  /* フェード開始時の不透明度 */
-  --prologue-body-opacity-end: 1;    /* フェード終了時の不透明度 */
-  --btn-next-left: 1020px; 
-  --btn-next-top: 600px;  
+
+  --prologue-body-fade-in: 600ms;
+  --prologue-body-fade-out: 400ms;
+  --prologue-body-fade-delay: 120ms;
+  --prologue-body-opacity-start: 0;
+  --prologue-body-opacity-end: 1;
+  --btn-next-left: 1020px;
+  --btn-next-top: 600px;
 }
 
-/* 画面外（余白）も常に黒にする。スクロールや余白を抑止し、safe-area に配慮 */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
 body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);box-sizing:border-box}
 
-/* 全シーン共通: #screen 内のすべての画像をドット補間なしで表示（にじみ防止） */
 #screen img{
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
 
-/* ゲーム画面のキャンバス */
 #screen{position:fixed;left:50%;top:50%;width:var(--screen-width);height:var(--screen-height);box-sizing:border-box;opacity:0;transition:opacity var(--transition-duration) ease;transform-origin:center center;transform: translate(-50%,-50%) scale(var(--screen-scale,1));}
 #screen.visible{opacity:1}
 
-/* 背景画像（ワヤン通常） */
 .bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-image:url('../assets/bg/01_bg_wayang_normal.png');background-repeat:no-repeat;background-position:center center;background-size:1280px 720px;z-index:0;pointer-events:none;image-rendering:pixelated}
 
-/* レイヤー: 前景に画像やボタンを置きます */
 .scene-layer{position:absolute;left:0;top:0;width:1280px;height:720px;z-index:10;pointer-events:none}
 
-/* 本文の画像（中央に表示） */
 .ui-prologue-body{position:absolute;left:0;top:0;transform:none;width:1280px;height:720px;max-width:none;max-height:none;z-index:20;pointer-events:none;image-rendering:pixelated;opacity: var(--prologue-body-opacity-start);transition: opacity var(--prologue-body-fade-in) ease var(--prologue-body-fade-delay)}
 
-/* ボタンはクリックできる（pointer-events:auto） */
 .btn-ui{pointer-events:auto;cursor:pointer;z-index:30}
 .btn-ui:active{filter:brightness(1.5)}
-/* 連打防止用: 無効状態 */
+
 .btn-ui.disabled{ pointer-events:none; cursor:default }
 #btn-next{position:absolute;left:var(--btn-next-left);top:var(--btn-next-top);width:auto;height:auto}
 
-/* フェード用のクラス（必要なら JS で切り替え） */
 .show{opacity:1}
 .hide{opacity:0}
 
-/* 小さい画面対応: scale で縮小して表示 */
 @media (max-width:1280px){
   :root{ --screen-fit-w: calc((100vw - 20px) / 1280); --screen-fit-h: calc((100vh - 20px) / 720); }
   #screen{ width:1280px; height:720px; transform: scale(min(var(--screen-fit-w), var(--screen-fit-h))); transform-origin:center center }
@@ -63,3 +46,4 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
   .bg, .scene-layer{ width:1280px; height:720px }
   .scene-layer img, .btn-ui{ max-width:none; height:auto }
 }
+

@@ -4,53 +4,40 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>ビーマの壺</title>
-    <!-- ページ固有の最小 CSS のみを読み込み -->
+
   <link rel="stylesheet" href="css/start.css">
-  <!--
-    このファイル: start.html
-    - ゲームのタイトル画面（はじめる / おわる / クレジット など）を表示します。
-    - 読み込み順（重要）: js/scene.js → js/text.js → js/start.js
-    - 小学生でも分かるメモ: 音（BGM）を鳴らす部分や、ボタンで別のページに行く仕組みがあります。
-  -->
+
   <link rel="icon" href="assets/ui_text/notice/48×48.png" type="image/png">
   </head>
   <body>
-    <!-- start シーン: レイヤ順に注意 -->
+
     <div id="screen" class="fade-target">
 
-      <!-- 背景 -->
       <div class="bg" style="background-image: url('assets/bg/01_bg_wayang_normal.png');" aria-hidden="true"></div>
 
-      <!-- 灯り（複数フレームでゆらぎ表現） -->
       <div class="scene-layer" aria-hidden="true">
         <img id="light-frame" src="assets/light/01_light_weak.png" alt="灯り" />
       </div>
 
-      <!-- ドゥリーヨダナ（ワヤン）：3フレームで上下ゆれ。目は閉じた画像を使う -->
       <div class="scene-layer" aria-hidden="true">
         <img id="duryodhana-frame" src="assets/character/wayang/01_duryodhana_wayang_top.png" alt="ドゥリーヨダナ" />
         <img id="duryodhana-eye" src="assets/character/wayang/07_duryodhana_wayang_eye_closed.png" alt="目" />
       </div>
 
-      <!-- 壺（透過） -->
       <div class="scene-layer" aria-hidden="true">
         <img id="vessel" src="assets/vessel/02_vessel_base_transparent.png" alt="壺" />
       </div>
 
-      <!-- UI テキスト（タイトル） -->
       <div class="scene-layer">
         <img id="ui-title" src="assets/ui_text/start/01_ui_start_text_title.png" alt="タイトル" />
       </div>
 
-      <!-- ボタン群（原寸、座標は CSS で調整） -->
       <div class="scene-layer">
   <img id="btn-begin" class="btn-ui" src="assets/ui_button/start/01_ui_start_btn_begin_normal.png" alt="はじめる" />
   <img id="btn-exit" class="btn-ui" src="assets/ui_button/start/03_ui_start_btn_exit_normal.png" alt="おわる" />
   <img id="btn-credit" class="btn-ui" src="assets/ui_button/start/05_ui_start_btn_credit_normal.png" alt="クレジット" />
       </div>
 
-  <!-- BGM とボタン効果音（preload） -->
-  <!-- 注意: ルート (index.html) が bgm を管理する場合はここに bgm を作らない -->
   <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
 
     </div>
@@ -59,3 +46,4 @@
     <script src="js/start.js"></script>
   </body>
 </html>
+

@@ -1,23 +1,11 @@
-/* prologue.js
-	 とてもシンプルなプロローグの動き。
-	 小学生でも分かるように、短く丁寧なコメントをつけています。
-
-	 動きのルール：
-	 - 5 枚の画像を順番に見せます。
-	 - 「すすむ」ボタンを押すと次の画像になります。
-	 - 最後の画像で「すすむ」を押すと育成画面へ移動します。
-*/
-
 ;(function(){
 	'use strict'
 
-	// ボタンと画像の要素を取ってくる（HTML の id と合わせる）
 	const screen = document.getElementById('screen')
 	const btnNext = document.getElementById('btn-next')
 	const prologueBody = document.getElementById('prologue-body')
 	const se = document.getElementById('se-button')
 
-	// 使う画像のリスト。index は 0 スタート
 	const uiImages = [
 		'assets/ui_text/prologue/01.png',
 		'assets/ui_text/prologue/02.png',
@@ -27,10 +15,9 @@
 	]
 
 	let idx = 0 // 今どの画像を見ているか
-	// 遷移中フラグ（フェードアウト→画面遷移の間は入力を無視）
+
 	let _navigating = false
 
-	// simple button-lock helper to avoid double-activation from rapid clicks
 	function lockButtons(ms){
 		try{
 			const t = typeof ms === 'number' ? ms : 600
@@ -41,10 +28,8 @@
 		}catch(e){ return true }
 	}
 
-	// ボタン音を鳴らす（無ければ何もしない）
 	function playSE(){ if(!se) return; try{ se.currentTime = 0; se.play().catch(()=>{}) }catch(e){} }
 
-	// ヘルパー: CSS 変数を読み取る
 	function getRootVar(name, fallback){
 		try{
 			const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
@@ -52,20 +37,18 @@
 		}catch(e){ return fallback }
 	}
 
-	// ミリ秒文字列（"600ms" や "0.6s"）を数値ミリ秒に変換
 	function toMs(v, fallback){
 		if(!v) return fallback || 0
 		v = String(v).trim()
 		if(v.endsWith('ms')) return Math.round(parseFloat(v))
 		if(v.endsWith('s')) return Math.round(parseFloat(v) * 1000)
-		// 数値だけならそのまま
+
 		const n = parseFloat(v)
 		return Number.isFinite(n) ? Math.round(n) : (fallback || 0)
 	}
 
-	// i 番目の画像をフェード付きで表示する（画像が無ければ 0 に戻す）
 	let _prologue_animating = false
-	// 画像の事前読み込み（decode 対応 + タイムアウト付き）
+
 	function preloadImage(src, timeoutMs){
 		return new Promise((resolve)=>{
 			try{
@@ -85,10 +68,9 @@
 		_prologue_animating = true
 
 		const src = uiImages[i] || uiImages[0]
-		// フェードアウトと並行して次画像を事前読み込みし、入れ替え時のチラつきを防ぐ
+
 		const preloadPromise = preloadImage(src, 1200)
 
-		// CSS 変数を取得（fallback はデフォルト値）
 		const fadeInStr = getRootVar('--prologue-body-fade-in', '600ms')
 		const fadeOutStr = getRootVar('--prologue-body-fade-out', '400ms')
 		const delayStr = getRootVar('--prologue-body-fade-delay', '0ms')
@@ -101,44 +83,37 @@
 		const startOp = parseFloat(startOpStr) || 0
 		const endOp = parseFloat(endOpStr) || 1
 
-		// フェードアウト（現在の表示を消す）
 		try{
 			prologueBody.style.willChange = 'opacity'
 			prologueBody.style.transition = `opacity ${fadeOutStr} ease`
 			prologueBody.style.opacity = startOp
 		}catch(e){}
 
-		// フェードアウト時間が終わるのを待つ
 		await new Promise(r => setTimeout(r, fadeOutMs + 20))
 
-		// 画像差し替え（事前読み込みの完了を待つ）
 		try{ await preloadPromise }catch(e){}
 		prologueBody.src = src
 
-		// フェードイン設定（遅延を付ける）
 		try{
-			// 遅延を含めた transition を設定してから opacity を上げる
+
 			prologueBody.style.transition = `opacity ${fadeInStr} ease ${delayStr}`
-			// 初期不透明度を確実にセットしてから次のフレームで end にする
+
 			prologueBody.style.opacity = startOp
-			// レイアウトを強制評価してステップを確実に分離
+
 			try{ void prologueBody.offsetWidth }catch(e){}
 			requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ prologueBody.style.opacity = endOp }) })
 		}catch(e){}
 
-		// フェードインが終わるのを待つ（遅延 + duration）
 		await new Promise(r => setTimeout(r, delayMs + fadeInMs + 20))
 
-		// will-change を戻しておく
 		try{ prologueBody.style.willChange = '' }catch(e){}
 		_prologue_animating = false
 	}
 
-	// 次へ押したときの処理
 	function next(){
-		// アニメ中や遷移中は入力を無視して、インデックスの不整合を防ぐ
+
 		if(_prologue_animating || _navigating) return
-		// 最後の画像なら、本文をフェードアウト→画面フェード→遷移
+
 		if(idx >= uiImages.length - 1){
 			playSE()
 			try{
@@ -147,7 +122,7 @@
 				const startOp = parseFloat(getRootVar('--prologue-body-opacity-start', '0')) || 0
 				const fadeOutMs = toMs(fadeOutStr, 400)
 				if(prologueBody){ prologueBody.style.transition = `opacity ${fadeOutStr} ease`; prologueBody.style.opacity = startOp }
-				// 本文フェードアウト完了後に画面全体をフェードアウト
+
 				setTimeout(()=>{
 					if(screen && screen.classList) screen.classList.remove('visible')
 					const screenFadeMs = toMs(getRootVar('--transition-duration','400ms'), 400)
@@ -159,13 +134,12 @@
 			}
 			return
 		}
-		// 次の画像へ
+
 		idx += 1
 		showImage(idx)
 		playSE()
 	}
 
-	// 初期表示（最初の画像を表示してフェードイン）
 	function start(){
 		idx = 0
 		showImage(idx)
@@ -173,11 +147,9 @@
 		if(btnNext) btnNext.focus()
 	}
 
-	// ボタンに処理を付ける
-	// ロック時間は CSS のフェード時間（out+delay+in）から動的に計算し、抜けを防止
 	if(btnNext) btnNext.addEventListener('click', e=>{
 		e && e.preventDefault()
-		// 進行中なら即無視（多重インクリメント防止）
+
 		if(_prologue_animating || _navigating) return
 		try{
 			const fadeInStr = getRootVar('--prologue-body-fade-in', '600ms')
@@ -191,7 +163,6 @@
 		next()
 	})
 
-	// DOM 準備ができたら start を走らせる
 	if(document.readyState === 'loading'){
 		document.addEventListener('DOMContentLoaded', ()=> setTimeout(start, 80))
 	} else {
@@ -199,5 +170,4 @@
 	}
 
 })();
-
 

@@ -1,16 +1,11 @@
 <!doctype html>
-<!--
-  grow.html
-  - 小学生でも分かる説明:
-    ・ここは育成画面です。ボタンでビーマにお世話をしてあげます。
-    ・大事なのはボタンを押して遊ぶこと。表示は画像と音だけで分かります。
--->
+
 <html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>ビーマの壺</title>
-  <!-- ページは assets + css/grow.css + js/grow.js のみで動作します -->
+
   <link rel="stylesheet" href="css/grow.css">
   <link rel="icon" href="assets/ui_text/notice/48×48.png" type="image/png">
 </head>
@@ -18,38 +13,31 @@
   <div id="screen" class="fade-target">
     <div class="bg" style="background-image: url('assets/bg/01_bg_wayang_normal.png');" aria-hidden="true"></div>
 
-    <!-- 灯り -->
     <div class="scene-layer" aria-hidden="true">
       <img id="light-frame" src="assets/light/01_light_weak.png" alt="灯り" />
     </div>
 
-    <!-- ドゥリーヨダナ(ワヤン) -->
     <div class="scene-layer" aria-hidden="true">
       <img id="duryodhana-frame" src="assets/character/wayang/01_duryodhana_wayang_top.png" alt="ドゥリーヨダナ" />
       <img id="duryodhana-eye" src="assets/character/wayang/07_duryodhana_wayang_eye_closed.png" alt="目" />
       <img id="duryodhana-mouth" src="assets/character/wayang/12_duryodhana_wayang_mouth_neutral.png" alt="口" />
     </div>
 
-    <!-- 壺 -->
     <div class="scene-layer" aria-hidden="true">
       <img id="vessel" src="assets/vessel/02_vessel_base_transparent.png" alt="壺" />
     </div>
 
-    <!-- ビーマ (手の動きは JS で差し替え) -->
     <div class="scene-layer" aria-hidden="true">
       <img id="bhima-hand" src="assets/bhima_hand/feeding/01_bhima_blood_front.png" alt="ビーマの手" style="display:none" />
     </div>
 
-    <!-- 血 エフェクト (重ね順注意) -->
     <div class="scene-layer" aria-hidden="true">
       <img id="blood-splash" src="assets/blood/01_blood_drop_small.png" alt="血" style="display:none" />
     </div>
 
-    <!-- UI テキスト (Day/ゲージ) -->
     <div class="scene-layer" aria-hidden="true">
       <img id="day-label" src="assets/ui_text/grow/day_label/01_ui_day_label_01.png" alt="Day" />
-  <!-- ドゥリーヨダナのセリフ画像をここに表示します（自動表示） -->
-  <!-- セリフ画像は1280x720のフルキャンバス画像です。表示制御はCSSで行います -->
+
   <img id="grow-dialog" src="" alt="セリフ" aria-hidden="true">
       <img id="gauge-base" src="assets/ui_gauge/grow/base/00_ui_gauge_base.png" alt="ゲージ土台" />
       <img id="gauge-karma" src="assets/ui_gauge/grow/karma/01_ui_gauge_lv1.png" alt="因果ゲージ" />
@@ -58,19 +46,15 @@
       <img id="gauge-temp" src="assets/ui_gauge/grow/temp/01_ui_gauge_lv2.png" alt="体温ゲージ" />
     </div>
 
-    <!-- UI ボタン -->
     <div class="scene-layer">
       <img id="btn-blood" class="btn-ui" src="assets/ui_button/grow/01_ui_grow_btn_blood_normal.png" alt="血を与える" />
       <img id="btn-warm" class="btn-ui" src="assets/ui_button/grow/03_ui_grow_btn_warm_normal.png" alt="手で温める" />
       <img id="btn-kitchen" class="btn-ui" src="assets/ui_button/grow/05_ui_grow_btn_kitchen_normal.png" alt="厨房へ行く" />
       <img id="btn-follow" class="btn-ui" src="assets/ui_button/grow/07_ui_grow_btn_follow_normal.png" alt="マスターに同行" />
-      <!-- ねむるボタン（初期は非表示） -->
+
       <img id="btn-sleep" class="btn-ui" src="assets/ui_button/grow/09_ui_grow_btn_sleep_normal.png" alt="ねむる" style="display:none" />
     </div>
 
-  <!-- 内部生成テキストは削除済み -->
-
-    <!-- 音源 -->
   <audio id="bgm" src="assets/sound/bgm/bgm_normal_piano.mp3" preload="auto" loop></audio>
   <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
   <audio id="se-blood-drop" src="assets/sound/se/se_blood_drop.mp3" preload="auto"></audio>
@@ -80,7 +64,6 @@
   <audio id="se-vessel-crack1" src="assets/sound/se/se_vessel_crack1.mp3" preload="auto"></audio>
   <audio id="se-vessel-crack3" src="assets/sound/se/se_vessel_crack3.mp3" preload="auto"></audio>
 
-  <!-- 日送りで使う SE / 入退室 / ベット -->
   <audio id="se-tyuubouniiku" src="assets/sound/se/tyuubouheiku.mp3" preload="auto"></audio>
   <audio id="se-masuta-nigoukou" src="assets/sound/se/masuta-nidoukou.mp3" preload="auto"></audio>
   <audio id="se-sleep-bed" src="assets/sound/se/se_sleep_bed.mp3" preload="auto"></audio>
@@ -88,9 +71,8 @@
 
   </div>
 
-  <!-- 調整パネルは廃止（JS側で初期化しないため表示されません） -->
-
   <script src="js/screen-fit.js"></script>
   <script src="js/grow.js"></script>
 </body>
 </html>
+

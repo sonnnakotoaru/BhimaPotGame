@@ -1,11 +1,5 @@
 <!doctype html>
-<!--
-  broken_vessel_end.html
-  - 小学生でも分かる説明:
-    ・これは「砕けた器」エンド画面です。
-    ・動きはかんたんで、灯りが弱まりながら本文画像を順に見せます。
-    ・最後まで見たらタイトルが出て「はじめにもどる」で最初に戻れます。
--->
+
 <html lang="ja">
 <head>
   <meta charset="utf-8">
@@ -16,33 +10,25 @@
 </head>
 <body>
   <div id="screen" class="fade-target">
-    <!-- 背景 -->
+
     <div class="bg" style="background-image: url('assets/bg/01_bg_wayang_normal.png');" aria-hidden="true"></div>
 
-    <!-- シーンレイヤー: 壺、灯り、本文、ボタン を重ねる -->
     <div class="scene-layer" role="dialog" aria-labelledby="bv-title">
 
-      <!-- 壺（固定） -->
       <img id="bv-vessel" src="assets/vessel/08_vessel_crack3_dim.png" alt="砕けた壺" aria-hidden="true">
 
-      <!-- 灯り（1枚を透過させながら見せる） -->
       <img id="bv-light" src="assets/light/03_light_strong.png" alt="灯り" aria-hidden="true">
 
-      <!-- 本文画像（JS がここに差し替えます） -->
       <div data-ui-text-container aria-hidden="true"></div>
 
-      <!-- タイトル画像（最終表示）: 初期は非表示（.hide） -->
       <img id="bv-title" class="hide" src="assets/ui_text/brokenend/06.png" alt="砕けた器の終わり（タイトル）">
 
-      <!-- すすむボタン（本文送り） -->
       <img id="btn-next" class="btn-ui" src="assets/ui_button/brokenend/01_ui_badend_broken_btn_next_normal.png" alt="すすむボタン">
 
-      <!-- はじめにもどる（最終表示） -->
       <img id="btn-restart" class="btn-ui hidden" src="assets/ui_button/brokenend/03_ui_badend_broken_btn_restart_normal.png" alt="はじめにもどる">
 
     </div>
 
-    <!-- BGM / SE -->
     <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
     <audio id="bgm" src="assets/sound/bgm/bgm_badend_darknight.mp3" preload="auto" loop></audio>
 

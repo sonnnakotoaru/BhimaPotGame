@@ -17,7 +17,7 @@
   }
 
   function getViewportSize(){
-    // Prefer visualViewport when available (more accurate on mobile browsers like Chrome on Android)
+
     try{
       if(window.visualViewport){
         return { w: Math.max(1, window.visualViewport.width), h: Math.max(1, window.visualViewport.height) }
@@ -32,8 +32,7 @@
       const vp = getViewportSize()
   const availW = Math.max(1, vp.w - PAD - pads.left - pads.right)
   const availH = Math.max(1, vp.h - PAD - pads.top - pads.bottom)
-  // Prefer integer CSS pixel sizes for the scaled canvas to keep pixel art crisp.
-  // Compute candidate scales that yield integer-sized width/height after scaling.
+
   const scaleW = Math.floor(availW) / DESIGN_W
   const scaleH = Math.floor(availH) / DESIGN_H
   let scale = Math.min(scaleW, scaleH, 1)
@@ -41,15 +40,13 @@
       document.documentElement.style.setProperty('--screen-scale', String(scale))
       document.documentElement.style.setProperty('--screen-fit-w', String(availW / DESIGN_W))
       document.documentElement.style.setProperty('--screen-fit-h', String(availH / DESIGN_H))
-    }catch(e){ /* ignore */ }
+    }catch(e){  }
   }
 
-  // helper to debounce frequent events
   function debounce(fn, ms){ let t=null; return function(){ clearTimeout(t); t = setTimeout(fn, ms) } }
 
   const debouncedUpdate = debounce(updateScale, 80)
 
-  // Listen to visualViewport events when present (handles Android Chrome UI changes well)
   if(window.visualViewport){
     try{
       window.visualViewport.addEventListener('resize', debouncedUpdate, { passive:true })
@@ -57,7 +54,6 @@
     }catch(e){}
   }
 
-  // Debug overlay (shown when URL has ?debugScale=1 or localStorage.debugScale == '1')
   const showDebug = (function(){
     try{
       const url = new URL(window.location.href)
@@ -92,19 +88,17 @@
     }catch(e){}
   }
 
-  // Fallback / additional listeners
   window.addEventListener('resize', debouncedUpdate, { passive:true })
   window.addEventListener('orientationchange', ()=> setTimeout(updateScale, 150))
   document.addEventListener('DOMContentLoaded', ()=> setTimeout(updateScale, 60))
 
-  // update debug when scale updates
   const _origUpdate = updateScale
   updateScale = function(){ _origUpdate(); updateDebug(); }
 
-  // run an initial series of updates to handle browser UI transitions on mobile
   updateScale()
   setTimeout(updateScale, 120)
   setTimeout(updateScale, 600)
-  // also update debug overlay periodically a little while after load
+
   if(showDebug){ setTimeout(()=>{ updateDebug(); }, 300); setInterval(()=>{ updateDebug(); }, 2000) }
 })();
+

@@ -1,17 +1,6 @@
-/*
-  missed_end.js
-  - 小学生でも分かる説明:
-    ・見落としエンド画面の最小限ロジックをここに書きます。
-    ・やることはとても簡単:
-      1) BGM を鳴らす
-      2) 本文画像を順に表示（「すすむ」ボタンで進む）
-      3) 最後にタイトル画像と「はじめにもどる」ボタンを見せる
-*/
-
 (function(){
   'use strict'
 
-  // DOM
   const screen = document.getElementById('screen')
   const container = document.querySelector('[data-ui-text-container]')
   const btnNext = document.getElementById('btn-next')
@@ -22,7 +11,6 @@
   const meVessel = document.getElementById('me-vessel')
   const meTitle = document.getElementById('me-title')
 
-  // 表示する本文画像リスト
   const uiImages = [
     'assets/ui_text/missed_end/01.png',
     'assets/ui_text/missed_end/02.png',
@@ -30,11 +18,10 @@
   ]
 
   let idx = 0
-  // 送り抜け・多重遷移防止
+
   let _animating = false
   let _navigating = false
 
-  // simple button-lock helper to avoid double-activation from rapid clicks
   function lockButtons(ms){
     try{
       const t = typeof ms === 'number' ? ms : 600
@@ -48,7 +35,6 @@
   function playSE(){ try{ if(seButton){ seButton.currentTime = 0; seButton.play().catch(()=>{}) } }catch(e){} }
   function playBgm(){ try{ if(bgm){ bgm.volume = 0.8; bgm.currentTime = 0; bgm.play().catch(()=>{}) } }catch(e){} }
 
-  // 指定インデックスの本文画像を表示する（前の画像はフェードアウトしてから入れ替え）
   function showImage(i){
     if(_animating) return
     _animating = true
@@ -64,7 +50,7 @@
       img.width = 1280; img.height = 720
       container.appendChild(img)
       setTimeout(()=>{ try{ img.classList.remove('hide'); img.classList.add('show') }catch(e){} }, 30)
-      // フェードイン終了でアニメ解除
+
       try{
         const cs = getComputedStyle(document.documentElement)
         const fin = (cs.getPropertyValue('--me-body-fade-in')||'').trim() || '600ms'
@@ -74,12 +60,12 @@
     }
     if(prev){
       try{
-        // フェードアウト時間（CSS変数）を読み取り
+
         const cs = getComputedStyle(document.documentElement)
         const v = (cs.getPropertyValue('--me-body-fade-out')||'').trim() || '400ms'
         const toMs = (val)=>{ val=String(val).trim(); if(val.endsWith('ms')) return Math.round(parseFloat(val)); if(val.endsWith('s')) return Math.round(parseFloat(val)*1000); const n=parseFloat(val); return Number.isFinite(n)?Math.round(n):400 }
         const waitMs = toMs(v)
-        // hide で不透明度を 0 にして、終わったら入れ替え
+
         prev.classList.remove('show'); prev.classList.add('hide')
         let fired = false
         const onEnd = (ev)=>{
@@ -97,7 +83,7 @@
   }
 
   function revealFinal(){
-    // まず直前の本文画像があればフェードアウトしてからタイトル表示
+
     const prev = container ? container.querySelector('.ui-text-image') : null
     const afterOut = ()=>{
       try{ if(container) container.innerHTML = '' }catch(e){}
@@ -139,21 +125,19 @@
   }
 
   function init(){
-    // 初期表示: フェードインして BGM を流す
+
     try{ if(screen) requestAnimationFrame(()=> setTimeout(()=> screen.classList.add('visible'), 20)) }catch(e){}
     playBgm()
 
-    // 最初の本文画像を表示
     idx = 0
     showImage(idx)
 
-    // ボタンイベント
-  try{ if(btnNext) { btnNext._missed_handler = ()=>{ if(_animating || _navigating) return; 
-    // 動的ロック（fadeOut + fadeIn の合計を目安に）
+  try{ if(btnNext) { btnNext._missed_handler = ()=>{ if(_animating || _navigating) return;
+
     try{ const cs = getComputedStyle(document.documentElement); const fin=(cs.getPropertyValue('--me-body-fade-in')||'').trim()||'600ms'; const fout=(cs.getPropertyValue('--me-body-fade-out')||'').trim()||'400ms'; const toMs=(v)=>{ v=String(v).trim(); if(v.endsWith('ms')) return Math.round(parseFloat(v)); if(v.endsWith('s')) return Math.round(parseFloat(v)*1000); const n=parseFloat(v); return Number.isFinite(n)?Math.round(n):0 }; const lockMs=Math.max(800, toMs(fin)+toMs(fout)+80); if(!lockButtons(lockMs)) return; btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, lockMs) }catch(e){ if(!lockButtons(800)) return }
     playSE(); next() }; btnNext.addEventListener('click', btnNext._missed_handler) } }catch(e){}
   try{ if(btnRestart) { btnRestart._missed_handler = ()=>{ if(_navigating) return; _navigating = true; if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){} ; playSE(); if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { try{ if(screen) screen.classList.remove('visible') }catch(e){} ;
-        // ルートの --transition-duration を待ってから遷移
+
         try{
           const v = getComputedStyle(document.documentElement).getPropertyValue('--transition-duration').trim() || '400ms'
           const toMs = (val)=>{ val=String(val).trim(); if(val.endsWith('ms')) return Math.round(parseFloat(val)); if(val.endsWith('s')) return Math.round(parseFloat(val)*1000); const n=parseFloat(val); return Number.isFinite(n)?Math.round(n):400 }
@@ -164,9 +148,9 @@
 
   try{ init() }catch(e){ console.error(e) }
 
-  // エクスポート（必要なら外部から再初期化できます）
   if(typeof window !== 'undefined'){
     window.missedEndInit = init
   }
 
 })();
+

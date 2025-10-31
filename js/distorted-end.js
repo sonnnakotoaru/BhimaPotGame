@@ -1,18 +1,6 @@
 (function(){
   'use strict'
 
-  /*
-    distorted-end.js
-    - 小学生でも分かる説明:
-      ・このファイルは「歪んだ終幕」画面の動きを作るよ。
-      ・やっていることはかんたんで、写真（画像）を順番に見せて、
-        「すすむ」ボタンで次の絵に進めるだけです。
-      ・最後まで見たらタイトルが出て、「はじめにもどる」ボタンで
-        スタート画面に戻れます。
-      ・変数や関数は短くまとめてあるので、読んで学ぶこともできます。
-  */
-
-  // UI（本文）で順に表示する画像のリストです。1280x720 の画像を想定しています。
   const uiImages = [
     'assets/ui_text/distortedend/01.png',
     'assets/ui_text/distortedend/02.png',
@@ -21,7 +9,6 @@
     'assets/ui_text/distortedend/05.png'
   ]
 
-  // キャラクター（ドゥリヨダナ）のフレーム画像。順番に切り替えて動きを出します。
   const duryFrames = [
     'assets/character/bad_alive/01_duryodhana_bad_alive_top.png',
     'assets/character/bad_alive/02_duryodhana_bad_alive_mid.png',
@@ -35,11 +22,10 @@
   let bgm = null
   let duryFrame = null
   let duryTimer = null
-  // 送り抜け・多重遷移防止用のフラグ
+
   let _animating = false
   let _navigating = false
 
-  // simple button-lock helper to avoid double-activation from rapid clicks
   function lockButtons(ms){
     try{
       const t = typeof ms === 'number' ? ms : 600
@@ -50,7 +36,6 @@
     }catch(e){ return true }
   }
 
-  // キャラ画像を指定した番号に切り替える。範囲外の番号は端に丸めるよ。
   function setCharStateByIndex(i){
     const frame = duryFrame || document.getElementById('duryodhana-frame')
     try{
@@ -58,7 +43,6 @@
     }catch(e){}
   }
 
-  // キャラ画像を自動でくるくる切り替える。ゲームに動きをつける役目。
   function cycleCharImages(){
     if(duryTimer) clearInterval(duryTimer)
     const seq = [0,1,2,1] // 0->1->2->1 の順でループ
@@ -66,24 +50,19 @@
     duryTimer = setInterval(()=>{ setCharStateByIndex(seq[i % seq.length]); i++ }, 700)
   }
 
-  // キャラの自動切り替えを止める
   function stopCycleCharImages(){ if(duryTimer){ clearInterval(duryTimer); duryTimer = null } }
 
-  // BGM を再生しようとする（ブラウザが許可しない場合は失敗しても大丈夫）
   function tryPlayBgm(){ if(!bgm) return; bgm.volume = 0.8; bgm.play().catch(()=>{}) }
 
-  // ボタン音（効果音）を鳴らす
   function playSE(){ const se = document.getElementById('se-button'); if(!se) return; try{ se.currentTime = 0; se.play().catch(()=>{}) }catch(e){} }
 
-  // 本文（UI画像）を画面に出す。プロローグと同じ要領で [data-ui-text-container] に挿入します。
   function showImage(i){
     if(_animating) return
     _animating = true
-    // image-only mode: insert into container if it exists, otherwise skip
+
     container = container || document.querySelector('[data-ui-text-container]')
     if(!container){ _animating = false; return }
 
-    // CSS 変数（フェード時間）を取得
     const cs = getComputedStyle(document.documentElement)
     const finStr = (cs.getPropertyValue('--prologue-body-fade-in')||'').trim() || '600ms'
     const foutStr = (cs.getPropertyValue('--prologue-body-fade-out')||'').trim() || '400ms'
@@ -93,17 +72,14 @@
     const foutMs = toMs(foutStr)
     const delayMs = toMs(delayStr)
 
-    // 追加する画像のパスとタイトル要素状態
     const targetSrc = uiImages[i]
     const titleEl = document.getElementById('distorted-title')
     const titleVisible = !!(titleEl && titleEl.classList && titleEl.classList.contains('show'))
 
-    // ターゲットがタイトルと同一か（タイトルに任せるパス）
     const sameAsTitle = titleEl && typeof titleEl.src === 'string' && titleEl.src.split('/').pop() === targetSrc.split('/').pop()
 
     const prev = container.querySelector('.ui-text-image')
 
-    // ヘルパー: 本文画像を挿入してフェードイン
     const insertAndFadeIn = ()=>{
       const img = document.createElement('img')
       img.className = 'ui-text-image hide'
@@ -114,53 +90,47 @@
       img.style.margin = '0 auto'
       container.appendChild(img)
       setTimeout(()=>{ try{ img.classList.remove('hide'); img.classList.add('show') }catch(e){} }, 30)
-      // 入場フェード完了後にアニメ解除
+
       setTimeout(()=>{ _animating = false }, delayMs + finMs + 60)
     }
 
-    // 1) 表示先がタイトルのとき
     if(sameAsTitle){
-      // 先に本文があればフェードアウトしてから片付ける
+
       if(prev){
         try{ prev.classList.remove('show'); prev.classList.add('hide') }catch(e){}
         setTimeout(()=>{ try{ if(prev.parentElement) prev.parentElement.removeChild(prev) }catch(e){} }, foutMs + 40)
       } else {
-        // prev がない場合は特に待たず継続
+
       }
-      // タイトルをフェードイン
+
       try{
         if(titleEl){
-          // まず確実に hide を外してから show を適用
+
           titleEl.classList.remove('hide')
           setTimeout(()=>{ try{ titleEl.classList.add('show') }catch(e){} }, 30)
         }
       }catch(e){}
-      // 十分な時間後にアニメ解除（入場フェード時間に合わせる）
+
       setTimeout(()=>{ _animating = false }, delayMs + finMs + 60)
       return
     }
 
-    // 2) タイトルが見えていれば先にフェードアウト
     if(titleVisible){
       try{ titleEl.classList.remove('show'); titleEl.classList.add('hide') }catch(e){}
-      // タイトルの退場が終わってから本文を入れる
+
       setTimeout(()=>{ insertAndFadeIn() }, foutMs + 40)
       return
     }
 
-    // 3) 既存の本文があればまずフェードアウト
     if(prev){
       try{ prev.classList.remove('show'); prev.classList.add('hide') }catch(e){}
       setTimeout(()=>{ try{ if(prev.parentElement) prev.parentElement.removeChild(prev) }catch(e){}; insertAndFadeIn() }, foutMs + 40)
       return
     }
 
-    // 4) そのまま本文を入れてフェードイン
     insertAndFadeIn()
   }
 
-  // 最後の画面を見せる準備。
-  // タイトルを出し、再スタートボタンを表示、すすむボタンは隠します。
   function revealFinalUI(){
     const title = document.getElementById('distorted-title')
     if(title){ title.classList.remove('hide'); title.classList.add('show') }
@@ -169,44 +139,35 @@
     if(duryFrame) duryFrame.classList.add('show')
   }
 
-  // 「すすむ」ボタンが押されたときの処理。
-  // 最後の画像なら最終UIを出し、そうでなければ次の画像を表示します。
   function next(){
     if(_animating || _navigating) return
-    // すでに最後の画像のときは最終 UI を表示して戻る
+
     if(idx >= uiImages.length - 1){ playSE(); revealFinalUI(); return }
 
-    // まだ最後でなければ次に進める
     idx += 1
     showImage(idx)
     playSE()
 
-    // 次に表示した画像が最終画像なら、ここで最終 UI を出す
     if(idx >= uiImages.length - 1){ revealFinalUI() }
   }
 
-  // 初期化: ボタンやオーディオ、キャラの初期状態をセットアップします。
   function init(){
-    // container may not exist in image-only mode; we avoid referencing it unless needed
+
     btnNext = document.getElementById('btn-next')
     btnRestart = document.getElementById('btn-restart')
     bgm = document.getElementById('bgm')
     duryFrame = document.getElementById('duryodhana-frame')
 
-  // 最初は再スタートボタンやタイトルを隠しておきます
   if(btnRestart){ btnRestart.classList.add('hidden'); btnRestart.style.display = 'none'; btnRestart.tabIndex = -1 }
   const title = document.getElementById('distorted-title'); if(title){ title.classList.add('hide'); }
 
-    // キャラの自動切り替え開始と、BGM 再生の試み
     setCharStateByIndex(0)
     cycleCharImages()
     tryPlayBgm()
 
-    // 最初の本文画像を出す（index=0）
     idx = 0
     showImage(idx)
 
-    // ボタンにクリックイベントをつけます。ハンドラはあとで外すために保存します。
   if(btnNext){ btnNext._dist_handler = ()=>{
       if(_animating || _navigating) return
       try{
@@ -223,7 +184,7 @@
       tryPlayBgm(); next()
     }; btnNext.addEventListener('click', btnNext._dist_handler) }
   if(btnRestart){ btnRestart._dist_handler = ()=>{ if(_navigating) return; _navigating = true; if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){}; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else {
-        // フォールバック: 画面全体をフェードアウトしてから遷移
+
         try{ const screen = document.getElementById('screen'); if(screen) screen.classList.remove('visible') }catch(e){}
         try{
           const v = (getComputedStyle(document.documentElement).getPropertyValue('--transition-duration')||'').trim() || '400ms'
@@ -232,7 +193,6 @@
         }catch(e){ setTimeout(()=>{ location.href = 'start.html' }, 400) }
       } }; btnRestart.addEventListener('click', btnRestart._dist_handler) }
 
-    // 画面全体をふわっと表示（requestAnimationFrame + ごく短い遅延で確実に発火）
     const screen = document.getElementById('screen')
     if(screen){
       try{ screen.style.removeProperty('opacity') }catch(e){}
@@ -242,7 +202,6 @@
 
   try{ init() }catch(e){ console.error(e) }
 
-  // expose lifecycle hooks
   if(typeof window !== 'undefined'){
     window.distortedEndInit = init
     window.distortedEndStop = function(){
@@ -250,20 +209,19 @@
       if(bgm && !bgm.paused){ try{ bgm.pause(); bgm.currentTime = 0 }catch(e){} }
       if(btnNext && btnNext._dist_handler) btnNext.removeEventListener('click', btnNext._dist_handler)
       if(btnRestart && btnRestart._dist_handler) btnRestart.removeEventListener('click', btnRestart._dist_handler)
-      // hide UI
+
       const title = document.getElementById('distorted-title'); if(title) title.classList.remove('show')
       if(btnRestart) btnRestart.classList.remove('show')
       if(container) container.innerHTML = ''
     }
   }
 
-  // フェードアウトして遷移するユーティリティ（このページ単体で動くフォールバック）
   if(!window.transitionAPI) window.transitionAPI = {}
   if(!window.transitionAPI.fadeOutNavigate){
     window.transitionAPI.fadeOutNavigate = function(url, ms){
       try{
         const duration = typeof ms === 'number' ? ms : 400
-        // 既にオーバーレイがある場合は再利用
+
         let o = document.getElementById('fade-overlay')
         if(!o){
           o = document.createElement('div')
@@ -279,7 +237,7 @@
           o.style.transition = 'opacity ' + (duration/1000) + 's ease'
           document.body.appendChild(o)
         }
-        // トリガー
+
         void o.offsetWidth
         o.style.opacity = '1'
         setTimeout(()=>{ try{ location.href = url }catch(e){ location.href = url } }, duration)
@@ -288,3 +246,4 @@
   }
 
 })();
+

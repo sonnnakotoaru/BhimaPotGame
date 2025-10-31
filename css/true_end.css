@@ -4,22 +4,22 @@
   --transition-duration: 400ms;
   --te-body-fade-in: 600ms;
   --te-body-fade-out: 400ms;
-  /* 画面(#screen) のフェードイン時間 (ms 単位)。ここを変えると true_end の入場フェードを調整できます */
+
   --te-screen-fade-in:2000ms;
-  /* 画面(#screen) のフェードアウト時間 (ms)。要望により既定を 2000ms に設定 */
+
   --te-screen-fade-out:2000ms;
-  /* BGM のフェード時間（入場/退場） */
+
   --te-bgm-fade-in: 2000ms;
   --te-bgm-fade-out: 2000ms;
-  /* タイトル時のキャラクター拡大とトリミングの調整用変数 */
+
   --te-title-scale: 2;
-  /* 正の値で下へ、負の値で上へ移動します。デフォルトは上へ120px（肩寄りが見える） */
+
   --te-title-translate-y: 300px;
-  /* 正の値で右へ、負の値で左へ移動します。最終表示の横位置調整用（デフォルト 0） */
+
   --te-title-translate-x: 250px;
-  /* タイトル表示時にドゥリョダナのアニメを遅くしたい場合の間隔（例: 1200ms） */
+
   --te-title-dury-interval: 1000ms;
-  /* タイトル画像の位置調整用（横/縦オフセット） */
+
   --te-title-offset-x: -250px;
   --te-title-offset-y: -100px;
   --te-opacity-start: 0;
@@ -30,40 +30,33 @@
   --btn-restart-top: 450px;
 }
 
-/* 画面外（余白）も黒。スクロール抑止と safe-area 対応 */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
 body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);box-sizing:border-box}
 
-/* 全シーン共通: #screen 内のすべての画像をドット補間なしで表示（にじみ防止） */
 #screen img{
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
 
-#screen{position:fixed;left:50%;top:50%;width:var(--screen-width);height:var(--screen-height);box-sizing:border-box;opacity:0;/* 退場(フェードアウト)時のトランジション */transition:opacity var(--te-screen-fade-out, var(--transition-duration)) ease;transform-origin:center center;transform: translate(-50%,-50%) scale(var(--screen-scale,1));}
-#screen.visible{opacity:1;/* 入場(フェードイン)時のトランジション */transition:opacity var(--te-screen-fade-in, var(--transition-duration)) ease}
+#screen{position:fixed;left:50%;top:50%;width:var(--screen-width);height:var(--screen-height);box-sizing:border-box;opacity:0;transition:opacity var(--te-screen-fade-out, var(--transition-duration)) ease;transform-origin:center center;transform: translate(-50%,-50%) scale(var(--screen-scale,1));}
+#screen.visible{opacity:1;transition:opacity var(--te-screen-fade-in, var(--transition-duration)) ease}
 
-/* 一時的に別のフェード挙動を適用したい場合は JS からこれらのクラスを付与してください */
 #screen.sleep-fade{ transition: opacity 800ms cubic-bezier(0.22,0.8,0.25,1) }
 #screen.start-fade{ transition: opacity 400ms ease }
 
 .bg{position:absolute;left:0;top:0;width:1280px;height:720px;background-repeat:no-repeat;background-size:1280px 720px;background-position:center center;z-index:10;pointer-events:none;image-rendering:pixelated}
 .scene-layer{position:absolute;left:0;top:0;width:100%;height:100%;z-index:20;pointer-events:none;overflow:hidden}
 
-/* キャラクター全体をまとめるラッパー */
 #te-character{position:absolute;left:0;top:0;width:1280px;height:720px;z-index:30;pointer-events:none;transition:opacity var(--te-body-fade-out) linear}
-#te-character.title-scale{ /* タイトル表示時にドゥリーヨダナを拡大してキャンバスで切り取る
-                           - 中央基準で拡大し、Y 方向に平行移動して肩が見えるように調整します。 */
+#te-character.title-scale{
   transform-origin: center center;
-  /* translateY を先に指定してから scale を入れる。変数で調整可能。 */
-    /* translateX/translateY を先に指定してから scale を入れる。変数で調整可能。 */
+
     transform: translateX(var(--te-title-translate-x)) translateY(var(--te-title-translate-y)) scale(var(--te-title-scale));
   transition: transform var(--te-body-fade-in) ease, opacity var(--te-body-fade-in) ease;
 }
 #te-character img{position:absolute;left:0;top:0;width:1280px;height:720px;max-width:none;max-height:none;image-rendering:pixelated;pointer-events:none}
 
-/* UI テキスト表示領域 */
 [data-ui-text-container]{position:absolute;left:0;top:0;width:100%;height:100%;z-index:60;pointer-events:none;display:flex;align-items:center;justify-content:center}
 .ui-text-image{position:relative;left:0;top:0;transform:none;width:1280px;height:720px;max-width:none;max-height:none;z-index:60;pointer-events:none;image-rendering:pixelated;display:block;opacity:var(--te-opacity-start);transition:opacity var(--te-body-fade-in) ease}
 
@@ -71,7 +64,7 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 
 .btn-ui{position:absolute;transform:none;pointer-events:auto;user-select:none;-webkit-user-drag:none;width:auto;height:auto;z-index:80;cursor:pointer}
 .btn-ui:active{filter:brightness(1.2)}
-/* 連打防止用: 無効状態 */
+
 .btn-ui.disabled{ pointer-events:none; cursor:default }
 #btn-next{left:var(--btn-next-left);top:var(--btn-next-top)}
 #btn-restart{left:var(--btn-restart-left);top:var(--btn-restart-top)}
@@ -91,7 +84,3 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 
 .hidden{display:none !important}
 
-/* 小学生向けメモ:
-   - ドゥリョダナ全体は #te-character の opacity を変えて「だんだん消える」表現をするよ。
-   - 本文画像は .ui-text-image に .show/.hide を付け替えてフェードさせます。
-*/

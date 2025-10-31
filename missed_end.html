@@ -8,40 +8,26 @@
   <link rel="icon" href="assets/ui_text/notice/48×48.png" type="image/png">
 </head>
 <body>
-  <!--
-    missed_end.html
-    - 小学生でも分かる説明:
-      ・これは「見落としエンド」画面だよ。
-      ・画面は順番に表示されて、ボタンで文章を進めるだけのシンプルな作り。
-      ・最後のボタンでタイトル（start.html）に戻るよ。
-  -->
 
   <div id="screen" class="fade-target">
     <div class="bg" style="background-image: url('assets/bg/01_bg_wayang_normal.png');" aria-hidden="true"></div>
 
     <div class="scene-layer" role="dialog" aria-labelledby="me-title">
 
-      <!-- 灯り（上に重ねる） -->
       <img id="me-light" src="assets/light/01_light_weak.png" alt="灯り" aria-hidden="true">
 
-      <!-- 壺（透過版） -->
       <img id="me-vessel" src="assets/vessel/02_vessel_base_transparent.png" alt="壺" aria-hidden="true">
 
-      <!-- 本文画像を入れるコンテナ（JS が差し替え） -->
       <div data-ui-text-container aria-hidden="true"></div>
 
-      <!-- タイトル（最終表示、初期は非表示） -->
       <img id="me-title" class="hide" src="assets/ui_text/missed_end/04.png" alt="見落としエンドのタイトル">
 
-      <!-- すすむボタン（本文送り） -->
       <img id="btn-next" class="btn-ui" src="assets/ui_button/brokenend/01_ui_badend_broken_btn_next_normal.png" alt="すすむ">
 
-      <!-- はじめにもどる（最終表示） -->
       <img id="btn-restart" class="btn-ui hidden" src="assets/ui_button/brokenend/03_ui_badend_broken_btn_restart_normal.png" alt="はじめにもどる">
 
     </div>
 
-    <!-- 音源 -->
     <audio id="se-button" src="assets/sound/se/se_button_click.mp3" preload="auto"></audio>
     <audio id="bgm" src="assets/sound/bgm/bgm_badend_darknight.mp3" preload="auto" loop></audio>
   </div>
@@ -50,3 +36,4 @@
   <script src="js/missed_end.js"></script>
 </body>
 </html>
+

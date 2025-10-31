@@ -1,29 +1,15 @@
-/*
-  start.js
-  - 小学生でも分かる説明:
-    ・ここは「スタート画面（タイトル）」のためのコードです。
-    ・ボタンを押すとプロローグやクレジットへ行きます。音（BGM）を鳴らす仕組みもあります。
-    ・やさしい言葉で書いてあるので、コードを見ながら学べます。
-*/
-/**
- * start.js
- * - ここは「スタート画面（タイトル）」の動きをまとめたファイルです。
- * - 中学生向け: ボタンでゲームをはじめたり、BGM を鳴らしたりする処理があります。
- */
-
 (function(){
   'use strict'
 
-  // 要素キャッシュ
   const screen = document.getElementById('screen')
-  // ensure bgm element exists so start.html can run standalone and BGM can be reused by router
+
   function ensureBgm(){
     let b = document.getElementById('bgm')
     if(!b){
       try{
         b = document.createElement('audio')
         b.id = 'bgm'
-  // bgm_start.mp3 と bgm_normal_piano.mp3 は同一音源。参照を bgm_normal_piano.mp3 に統一。
+
   b.src = 'assets/sound/bgm/bgm_normal_piano.mp3'
         b.preload = 'auto'
         b.loop = true
@@ -59,22 +45,20 @@
   let duryIndex = 0
 
   window.addEventListener('load', () => {
-    // call the shared init so it runs both on normal load and when router injects
+
     try{ if(window.startSceneInit) window.startSceneInit() }catch(e){}
   })
 
-  // scene init function: starts animations and sets up fade-in behavior
   function startSceneInit(){
     if (screen) {
-      // Use a short temporary class instead of inline transition so CSS vars are not overridden
+
       try{ screen.classList.add('start-fade') }catch(e){}
-      // Remove any inline opacity so the CSS .visible rule can take effect
+
       try{ screen.style.removeProperty('opacity') }catch(e){}
-      // Use the CSS class for fade handling to keep behavior consistent with scene.css
+
       requestAnimationFrame(() => { screen.classList.add('visible') })
     }
 
-    // restart animations (ensure no duplicate timers by stopping first)
     stopAnims()
     startLightAnim()
     startDuryAnim()
@@ -82,11 +66,8 @@
     tryPlayBgmOnFadeIn()
   }
 
-  // expose a known init function so router can call it after injecting scripts
   window.startSceneInit = startSceneInit
-  // expose a stop function so router can clear intervals when swapping scenes
-  // 注意: ゲーム全体で BGM はページ遷移で停止しない設計です。
-  // そのため stop 関数はアニメ等を止めますが BGM を強制停止しません。
+
   function startSceneStop(){ stopAnims() }
   window.startSceneStop = startSceneStop
 
@@ -97,8 +78,7 @@
       screen.removeEventListener('transitionend', onEnd)
       try{
         if(bgm){
-          // If a root bgm is present and already playing, do nothing.
-          // If it's paused, try to play it without resetting currentTime to keep seamless playback.
+
           bgm.volume = 1.0;
           if(bgm.paused){
             bgm.play().catch(()=>{
@@ -154,7 +134,7 @@
         if(btnBegin._locked) return; btnBegin._locked = true;
         btnBegin.classList.add('disabled'); btnBegin.setAttribute('aria-disabled','true')
         if(screen) screen.style.pointerEvents = 'none'
-        setTimeout(()=>{ 
+        setTimeout(()=>{
           btnBegin._locked = false
           try{ btnBegin.classList.remove('disabled'); btnBegin.removeAttribute('aria-disabled') }catch(e){}
           try{ if(screen) screen.style.pointerEvents = '' }catch(e){}
@@ -172,7 +152,7 @@
         if(btnExit._locked) return; btnExit._locked = true;
         btnExit.classList.add('disabled'); btnExit.setAttribute('aria-disabled','true')
         if(screen) screen.style.pointerEvents = 'none'
-        setTimeout(()=>{ 
+        setTimeout(()=>{
           btnExit._locked = false
           try{ btnExit.classList.remove('disabled'); btnExit.removeAttribute('aria-disabled') }catch(e){}
           try{ if(screen) screen.style.pointerEvents = '' }catch(e){}
@@ -190,7 +170,7 @@
         if(btnCredit._locked) return; btnCredit._locked = true;
         btnCredit.classList.add('disabled'); btnCredit.setAttribute('aria-disabled','true')
         if(screen) screen.style.pointerEvents = 'none'
-        setTimeout(()=>{ 
+        setTimeout(()=>{
           btnCredit._locked = false
           try{ btnCredit.classList.remove('disabled'); btnCredit.removeAttribute('aria-disabled') }catch(e){}
           try{ if(screen) screen.style.pointerEvents = '' }catch(e){}
@@ -202,8 +182,7 @@
   }
 
   window.addEventListener('beforeunload', ()=>{
-    // Do not forcibly pause bgm here. If a SPA/router is used, bgm should persist.
-    // ページアンロード時は強制停止しない（router を使って遷移すれば bgm は持続する）。
+
     stopAnims()
   })
 
@@ -224,3 +203,4 @@
   }
 
 })();
+

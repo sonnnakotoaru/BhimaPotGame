@@ -17,7 +17,7 @@
 
 統合ポイント（AI が触るときに注意）
 - `window.transitionAPI` / `window.router` の存在を確認してから利用する。フォールバックが用意されていることが多いが、破壊的変更は厳禁。
-- `TextRenderer`（`docs/README_text_renderer.md`）は内部生成のテキスト表示 API。使用時は `create` / `clear` の契約に従う。
+- `TextRenderer`（`.github/text_renderer.md`）は内部生成のテキスト表示 API。使用時は `create` / `clear` の契約に従う。
 - オーディオ: `preload="auto"` を使い、`play()`/`pause()`/`currentTime` を明示的に制御する。ブラウザのオーディオポリシーに注意（ユーザー操作トリガーが必要な場合あり）。
 
 コーディング上の具体的ルール（守るべきもの）
@@ -40,6 +40,6 @@
 1. `.github/copilot-coding-rules.md` — 画面表現ルールの元文書（既存ルールを尊重する）。
 2. `grow.html` / `js/grow.js` — 最も複雑なシーン。アニメ、SE、ゲージ、遷移の実装例。
 3. `index.html` / `js/index.js` — シンプルなテンプレート例（遷移の扱いが明確）。
-4. `docs/README_text_renderer.md` — 内部テキストレンダラの API 使用例。
+4. `.github/text_renderer.md` — 内部テキストレンダラの API 使用例。
 
 最後に: このファイルは「必読の最短ガイド」です。内容に不足・誤解があれば、どの項目を補足すべきか教えてください。短い例やテンプレートを追加してマージします。
