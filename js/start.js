@@ -49,6 +49,22 @@
     try{ if(window.startSceneInit) window.startSceneInit() }catch(e){}
   })
 
+  // iOS Safari 対策: 最初のユーザー操作でBGM再生を解禁（オーバーレイ前のソフトなアンロック）
+  function setupUserGestureAudioUnlock(){
+    const unlock = ()=>{
+      try{ if(bgm){ bgm.volume = 0.7; bgm.play().catch(()=>{}) } }catch(e){}
+      try{ window.removeEventListener('pointerdown', unlock) }catch(e){}
+      try{ window.removeEventListener('click', unlock) }catch(e){}
+      try{ window.removeEventListener('touchstart', unlock) }catch(e){}
+      try{ window.removeEventListener('keydown', unlock) }catch(e){}
+    }
+    try{ window.addEventListener('pointerdown', unlock, { once:true }) }catch(e){}
+    try{ window.addEventListener('click', unlock, { once:true }) }catch(e){}
+    try{ window.addEventListener('touchstart', unlock, { once:true }) }catch(e){}
+    try{ window.addEventListener('keydown', unlock, { once:true }) }catch(e){}
+  }
+  setupUserGestureAudioUnlock()
+
   function startSceneInit(){
     if (screen) {
 
@@ -130,6 +146,8 @@
   if(btnBegin){
     btnBegin.addEventListener('click', (e)=>{
       e.preventDefault()
+      // クリックを機にBGMを解禁（iOS Safari向け）
+      try{ if(bgm){ bgm.volume = 0.7; if(bgm.paused) bgm.play().catch(()=>{}) } }catch(e){}
       try{
         if(btnBegin._locked) return; btnBegin._locked = true;
         btnBegin.classList.add('disabled'); btnBegin.setAttribute('aria-disabled','true')
@@ -148,6 +166,7 @@
   if(btnExit){
     btnExit.addEventListener('click', (e)=>{
       e.preventDefault()
+      try{ if(bgm){ bgm.volume = 0.7; if(bgm.paused) bgm.play().catch(()=>{}) } }catch(e){}
       try{
         if(btnExit._locked) return; btnExit._locked = true;
         btnExit.classList.add('disabled'); btnExit.setAttribute('aria-disabled','true')
@@ -166,6 +185,7 @@
   if(btnCredit){
     btnCredit.addEventListener('click', (e)=>{
       e.preventDefault()
+      try{ if(bgm){ bgm.volume = 0.7; if(bgm.paused) bgm.play().catch(()=>{}) } }catch(e){}
       try{
         if(btnCredit._locked) return; btnCredit._locked = true;
         btnCredit.classList.add('disabled'); btnCredit.setAttribute('aria-disabled','true')
