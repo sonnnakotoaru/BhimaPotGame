@@ -52,7 +52,7 @@
 
   function stopCycleCharImages(){ if(duryTimer){ clearInterval(duryTimer); duryTimer = null } }
 
-  function tryPlayBgm(){ if(!bgm) return; bgm.volume = 0.8; bgm.play().catch(()=>{}) }
+  function tryPlayBgm(){ if(!bgm) return; bgm.volume = 0.7; bgm.play().catch(()=>{}) }
 
   function playSE(){ const se = document.getElementById('se-button'); if(!se) return; try{ se.currentTime = 0; se.play().catch(()=>{}) }catch(e){} }
 
