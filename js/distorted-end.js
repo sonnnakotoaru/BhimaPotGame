@@ -183,7 +183,7 @@
       }catch(e){ if(!lockButtons(800)) return }
       tryPlayBgm(); next()
     }; btnNext.addEventListener('click', btnNext._dist_handler) }
-  if(btnRestart){ btnRestart._dist_handler = ()=>{ if(_navigating) return; _navigating = true; if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){}; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else {
+  if(btnRestart){ btnRestart._dist_handler = ()=>{ if(_navigating) return; if(!lockButtons(1000)) return; _navigating = true; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){}; if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else {
 
         try{ const screen = document.getElementById('screen'); if(screen) screen.classList.remove('visible') }catch(e){}
         try{
