@@ -196,7 +196,7 @@
     lastPlayAt: {}, // id -> timestamp
     // Safari 安定性のため WebAudio を優先。必要な音量差は per-id の WebAudio ゲインで吸収する
     preferHtml: {},
-    webGain: { 'se-heart': 1.6, 'se-vessel-crack1': 1.3, 'se-vessel-crack3': 1.3 },
+  webGain: { 'se-heart': 2.2, 'se-vessel-crack1': 1.3, 'se-vessel-crack3': 1.3 },
     unlockInstalled: false
   }
   function sfxIsHttp(){ try{ return /^https?:$/i.test(location.protocol) }catch(e){ return false } }
@@ -1701,7 +1701,7 @@
 
     try{ preloadAssets(PRELOAD_ASSETS) }catch(e){}
 
-  try{ amplifyAudioElement('se-heart', 3) }catch(e){}
+  try{ amplifyAudioElement('se-heart', 4) }catch(e){}
 
   try{ amplifyAudioElement('se-cause-break1', 1.0) }catch(e){}
   try{ amplifyAudioElement('se-cause-break3', 1.0) }catch(e){}
