@@ -446,43 +446,7 @@
           p.then(()=>{
             try{ fadeAudio(bgm, targetVol, fadeInMs).catch(()=>{}) }catch(e){}
           }).catch(()=>{
-
-            try{
-              if(document.getElementById('audio-unlock')) return
-              const o = document.createElement('div')
-              o.id = 'audio-unlock'
-              o.style.position = 'fixed'
-              o.style.left = '0'
-              o.style.top = '0'
-              o.style.right = '0'
-              o.style.bottom = '0'
-              o.style.display = 'flex'
-              o.style.alignItems = 'center'
-              o.style.justifyContent = 'center'
-              o.style.background = 'rgba(0,0,0,0.5)'
-              o.style.zIndex = '99999'
-              const btn = document.createElement('button')
-              btn.textContent = '音を再生する'
-              btn.style.fontSize = '20px'
-              btn.style.padding = '12px 20px'
-              btn.addEventListener('click', ()=>{
-                try{ bgm.play().then(()=>{ fadeAudio(bgm, targetVol, fadeInMs).catch(()=>{}) }).catch(()=>{}) }catch(e){}
-                try{ if(seBtn) seBtn.play().catch(()=>{}) }catch(e){}
-                try{ if(o && o.parentElement) o.parentElement.removeChild(o) }catch(e){}
-              })
-              o.appendChild(btn)
-              document.body.appendChild(o)
-
-              const resumeOnce = ()=>{
-                try{ bgm.play().then(()=>{ fadeAudio(bgm, targetVol, fadeInMs).catch(()=>{}) }).catch(()=>{}) }catch(e){}
-                try{ if(seBtn) seBtn.play().catch(()=>{}) }catch(e){}
-                try{ if(o && o.parentElement) o.parentElement.removeChild(o) }catch(e){}
-                try{ document.removeEventListener('pointerdown', resumeOnce) }catch(e){}
-                try{ document.removeEventListener('click', resumeOnce) }catch(e){}
-              }
-              document.addEventListener('pointerdown', resumeOnce, { once:true })
-              document.addEventListener('click', resumeOnce, { once:true })
-            }catch(e){}
+            /* ポップアップは表示しない。次のボタン操作で再試行する */
           })
         } else {
 
@@ -510,6 +474,7 @@
         lockButtons(lockMs)
         try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
         try{ if(seAudioMode!=='webaudio'){ initWebAudioSE().catch(()=>{}) } }catch(e){}
+        try{ if(bgm && bgm.paused){ const targetVol=0.8; const fadeInMs=readRootMs('--te-bgm-fade-in',800); try{ bgm.volume=0 }catch(e){}; bgm.play().then(()=>{ try{ fadeAudio(bgm, targetVol, fadeInMs).catch(()=>{}) }catch(e){} }).catch(()=>{}) } }catch(e){}
         playSE(); next()
       }
       btnNext.addEventListener('click', btnNext._handler)

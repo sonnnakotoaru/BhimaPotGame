@@ -126,10 +126,7 @@
     try{
       if(!bgm) return
       bgm.volume = 0.6
-      const p = bgm.play()
-      let ok = false
-      if(p && p.then){ p.then(()=>{ ok = true }).catch(()=>{ showSoundOverlay() }) }
-      setTimeout(()=>{ try{ if(bgm && bgm.paused && !ok) showSoundOverlay() }catch(e){} }, 240)
+      try{ bgm.play().catch(()=>{}) }catch(e){}
     }catch(e){}
   }
 
