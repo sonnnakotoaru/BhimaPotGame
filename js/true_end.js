@@ -436,7 +436,7 @@
     try{
       if(bgm){
 
-        const targetVol = 0.8
+  const targetVol = 0.7
         bgm.currentTime = 0
 
         try{ bgm.volume = 0 }catch(e){}
@@ -474,7 +474,7 @@
         lockButtons(lockMs)
         try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
         try{ if(seAudioMode!=='webaudio'){ initWebAudioSE().catch(()=>{}) } }catch(e){}
-        try{ if(bgm && bgm.paused){ const targetVol=0.8; const fadeInMs=readRootMs('--te-bgm-fade-in',800); try{ bgm.volume=0 }catch(e){}; bgm.play().then(()=>{ try{ fadeAudio(bgm, targetVol, fadeInMs).catch(()=>{}) }catch(e){} }).catch(()=>{}) } }catch(e){}
+  try{ if(bgm && bgm.paused){ const targetVol=0.7; const fadeInMs=readRootMs('--te-bgm-fade-in',800); try{ bgm.volume=0 }catch(e){}; bgm.play().then(()=>{ try{ fadeAudio(bgm, targetVol, fadeInMs).catch(()=>{}) }catch(e){} }).catch(()=>{}) } }catch(e){}
         playSE(); next()
       }
       btnNext.addEventListener('click', btnNext._handler)
