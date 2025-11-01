@@ -44,36 +44,7 @@
       window.addEventListener('keydown', unlock, { once:true })
     }catch(e){}
   }
-  function showSoundOverlay(){
-    try{
-      if(document.getElementById('audio-unlock')) return
-      const overlay = document.createElement('div')
-      overlay.id = 'audio-unlock'
-      overlay.style.position = 'fixed'
-      overlay.style.left = '0'
-      overlay.style.top = '0'
-      overlay.style.right = '0'
-      overlay.style.bottom = '0'
-      overlay.style.display = 'flex'
-      overlay.style.alignItems = 'center'
-      overlay.style.justifyContent = 'center'
-      overlay.style.background = 'rgba(0,0,0,0.5)'
-      overlay.style.zIndex = '99999'
-      const btn = document.createElement('button')
-      btn.textContent = '音を再生する'
-      btn.style.fontSize = '20px'
-      btn.style.padding = '12px 20px'
-      const hide = ()=>{ try{ if(overlay && overlay.parentElement) overlay.parentElement.removeChild(overlay) }catch(e){} }
-      const unlock = ()=>{ try{ const b=bgm||document.getElementById('bgm'); if(b){ b.volume=0.6; b.play().catch(()=>{}) } }catch(e){}; hide() }
-      btn.addEventListener('click', unlock)
-      overlay.appendChild(btn)
-      document.body.appendChild(overlay)
-      try{ window.addEventListener('pointerdown', unlock, { once:true }) }catch(e){}
-      try{ window.addEventListener('click', unlock, { once:true }) }catch(e){}
-      try{ window.addEventListener('touchstart', unlock, { once:true }) }catch(e){}
-      try{ window.addEventListener('keydown', unlock, { once:true }) }catch(e){}
-    }catch(e){}
-  }
+  // オーディオ解錠用ポップアップは使用しない方針のため未実装
 
   // SE（ボタン音）堅牢化: WebAudio 優先 + HTMLAudio プール
   let sePool = null
