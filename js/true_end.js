@@ -49,6 +49,16 @@
   async function initWebAudioSE(){ try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false; seAudioCtx=seAudioCtx||new AC(); seGainNode=seGainNode||seAudioCtx.createGain(); try{ seGainNode.gain.value=1.0 }catch(e){}; try{ seGainNode.connect(seAudioCtx.destination) }catch(e){}; installUnlockers(); if(!seBtn||!seBtn.src||!isHttp()){ seAudioMode='html'; return false } if(seAudioBuffer){ seAudioMode='webaudio'; return true } const res=await fetch(seBtn.src,{cache:'force-cache'}); const arr=await res.arrayBuffer(); seAudioBuffer=await new Promise((resolve,reject)=>{ try{ seAudioCtx.decodeAudioData(arr, resolve, reject) }catch(e){ reject(e) } }); seAudioMode='webaudio'; return true }catch(e){ seAudioMode='html'; return false } }
   function tryPlaySEWebAudio(){ try{ if(seAudioMode!=='webaudio'||!seAudioCtx||!seAudioBuffer||!seGainNode) return false; if(seAudioCtx.state==='suspended'){ try{ seAudioCtx.resume().catch(()=>{}) }catch(e){} } const src=seAudioCtx.createBufferSource(); src.buffer=seAudioBuffer; src.connect(seGainNode); src.start(0); return true }catch(e){ return false } }
   function ensureSEPool(){ try{ if(sePool&&sePool.length) return sePool; if(!seBtn){ sePool=[]; return sePool } sePool=[seBtn]; for(let i=1;i<5;i++){ const a=seBtn.cloneNode(true); try{ a.removeAttribute('id') }catch(e){}; try{ a.preload='auto' }catch(e){}; try{ a.setAttribute('playsinline','') }catch(e){}; try{ document.body.appendChild(a) }catch(e){}; try{ a.load() }catch(e){}; sePool.push(a) } return sePool }catch(e){ sePool=[]; return sePool } }
+  function setupSEVisibilityRefresh(){
+    try{
+      const onVisible = ()=>{
+        try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
+        try{ const pool = ensureSEPool(); for(let i=0;i<pool.length;i++){ try{ pool[i].load() }catch(e){} } }catch(e){}
+      }
+      document.addEventListener('visibilitychange', ()=>{ try{ if(document.visibilityState==='visible') onVisible() }catch(e){} })
+      window.addEventListener('pageshow', (ev)=>{ try{ if(ev && ev.persisted) onVisible(); else onVisible() }catch(e){} })
+    }catch(e){}
+  }
 
   function readRootMs(varName, fallbackMs){
     try{
@@ -489,6 +499,8 @@
   try{ startEyeLoop(3000, 7000) }catch(e){}
 
   try{ startMouthLoop(600, 1200) }catch(e){}
+  try{ initWebAudioSE().catch(()=>{}) }catch(e){}
+  try{ setupSEVisibilityRefresh() }catch(e){}
 
     if(btnNext){
       btnNext._handler = ()=>{
@@ -497,6 +509,7 @@
         const lockMs = Math.max(800, readRootMs('--te-body-fade-in',600) + readRootMs('--te-body-fade-out',400) + 80)
         lockButtons(lockMs)
         try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
+        try{ if(seAudioMode!=='webaudio'){ initWebAudioSE().catch(()=>{}) } }catch(e){}
         playSE(); next()
       }
       btnNext.addEventListener('click', btnNext._handler)

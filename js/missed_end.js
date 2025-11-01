@@ -92,6 +92,16 @@
   async function initWebAudioSE(){ try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false; seAudioCtx=seAudioCtx||new AC(); seGainNode=seGainNode||seAudioCtx.createGain(); try{ seGainNode.gain.value=1.0 }catch(e){}; try{ seGainNode.connect(seAudioCtx.destination) }catch(e){}; installUnlockers(); if(!seButton||!seButton.src||!isHttp()){ seAudioMode='html'; return false } if(seAudioBuffer){ seAudioMode='webaudio'; return true } const res=await fetch(seButton.src,{cache:'force-cache'}); const arr=await res.arrayBuffer(); seAudioBuffer=await new Promise((resolve,reject)=>{ try{ seAudioCtx.decodeAudioData(arr, resolve, reject) }catch(e){ reject(e) } }); seAudioMode='webaudio'; return true }catch(e){ seAudioMode='html'; return false } }
   function tryPlaySEWebAudio(){ try{ if(seAudioMode!=='webaudio'||!seAudioCtx||!seAudioBuffer||!seGainNode) return false; if(seAudioCtx.state==='suspended'){ try{ seAudioCtx.resume().catch(()=>{}) }catch(e){} } const src=seAudioCtx.createBufferSource(); src.buffer=seAudioBuffer; src.connect(seGainNode); src.start(0); return true }catch(e){ return false } }
   function ensureSEPool(){ try{ if(sePool&&sePool.length) return sePool; if(!seButton){ sePool=[]; return sePool } sePool=[seButton]; for(let i=1;i<5;i++){ const a=seButton.cloneNode(true); try{ a.removeAttribute('id') }catch(e){}; try{ a.preload='auto' }catch(e){}; try{ a.setAttribute('playsinline','') }catch(e){}; try{ document.body.appendChild(a) }catch(e){}; try{ a.load() }catch(e){}; sePool.push(a) } return sePool }catch(e){ sePool=[]; return sePool } }
+  function setupSEVisibilityRefresh(){
+    try{
+      const onVisible = ()=>{
+        try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
+        try{ const pool = ensureSEPool(); for(let i=0;i<pool.length;i++){ try{ pool[i].load() }catch(e){} } }catch(e){}
+      }
+      document.addEventListener('visibilitychange', ()=>{ try{ if(document.visibilityState==='visible') onVisible() }catch(e){} })
+      window.addEventListener('pageshow', (ev)=>{ try{ if(ev && ev.persisted) onVisible(); else onVisible() }catch(e){} })
+    }catch(e){}
+  }
   function playSE(){
     try{
       if(playSE._busy) return
@@ -216,6 +226,8 @@
   try{ if(screen) requestAnimationFrame(()=> setTimeout(()=> screen.classList.add('visible'), 20)) }catch(e){}
   setupUserGestureBgmUnlock();
   playBgm()
+  try{ initWebAudioSE().catch(()=>{}) }catch(e){}
+  try{ setupSEVisibilityRefresh() }catch(e){}
 
     idx = 0
     showImage(idx)
@@ -224,6 +236,8 @@
 
     try{ const cs = getComputedStyle(document.documentElement); const fin=(cs.getPropertyValue('--me-body-fade-in')||'').trim()||'600ms'; const fout=(cs.getPropertyValue('--me-body-fade-out')||'').trim()||'400ms'; const toMs=(v)=>{ v=String(v).trim(); if(v.endsWith('ms')) return Math.round(parseFloat(v)); if(v.endsWith('s')) return Math.round(parseFloat(v)*1000); const n=parseFloat(v); return Number.isFinite(n)?Math.round(n):0 }; const lockMs=Math.max(800, toMs(fin)+toMs(fout)+80); if(!lockButtons(lockMs)) return; btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, lockMs) }catch(e){ if(!lockButtons(800)) return }
     try{ if(bgm && bgm.paused){ bgm.volume = 0.6; bgm.play().catch(()=>{}) } }catch(e){}
+    try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
+    try{ if(seAudioMode!=='webaudio'){ initWebAudioSE().catch(()=>{}) } }catch(e){}
     playSE(); next() }; btnNext.addEventListener('click', btnNext._missed_handler) } }catch(e){}
   try{ if(btnRestart) { btnRestart._missed_handler = ()=>{ if(_navigating) return; _navigating = true; if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){} ; playSE(); if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { try{ if(screen) screen.classList.remove('visible') }catch(e){} ;
 
