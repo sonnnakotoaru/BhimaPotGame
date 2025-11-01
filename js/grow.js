@@ -825,7 +825,72 @@
   }
 
   function playBgmIfNeeded(){
-    try{ if(!bgm) return; if(!bgm.paused) return; bgm.currentTime = 0; bgm.play().catch(()=>{}) }catch(e){}
+    try{
+      if(!bgm) return
+      if(!bgm.paused) return
+      try{ bgm.volume = 0.7 }catch(e){}
+      try{ bgm.currentTime = 0 }catch(e){}
+      let played = false
+      try{
+        const p = bgm.play()
+        if(p && p.then){
+          p.then(()=>{ played = true }).catch(()=>{ try{ showSoundOverlayGrow() }catch(e){} })
+        }
+      }catch(e){ /* ignore */ }
+      setTimeout(()=>{ try{ if(bgm && bgm.paused && !played) showSoundOverlayGrow() }catch(e){} }, 220)
+    }catch(e){}
+  }
+
+  // iOS Safari 対策: 最初のユーザー操作でBGM再生を解禁
+  function setupUserGestureBgmUnlock(){
+    try{
+      if(!bgm) return
+      const unlock = ()=>{
+        try{ bgm.volume = 0.7; bgm.play().catch(()=>{}) }catch(e){}
+        try{ window.removeEventListener('pointerdown', unlock) }catch(e){}
+        try{ window.removeEventListener('click', unlock) }catch(e){}
+        try{ window.removeEventListener('touchstart', unlock) }catch(e){}
+        try{ window.removeEventListener('keydown', unlock) }catch(e){}
+      }
+      window.addEventListener('pointerdown', unlock, { once:true })
+      window.addEventListener('click', unlock, { once:true })
+      window.addEventListener('touchstart', unlock, { once:true })
+      window.addEventListener('keydown', unlock, { once:true })
+    }catch(e){}
+  }
+
+  function showSoundOverlayGrow(){
+    try{
+      if(document.getElementById('audio-unlock')) return
+      const overlay = document.createElement('div')
+      overlay.id = 'audio-unlock'
+      overlay.style.position = 'fixed'
+      overlay.style.left = '0'
+      overlay.style.top = '0'
+      overlay.style.right = '0'
+      overlay.style.bottom = '0'
+      overlay.style.display = 'flex'
+      overlay.style.alignItems = 'center'
+      overlay.style.justifyContent = 'center'
+      overlay.style.background = 'rgba(0,0,0,0.5)'
+      overlay.style.zIndex = '99999'
+      const btn = document.createElement('button')
+      btn.textContent = '音を再生する'
+      btn.style.fontSize = '20px'
+      btn.style.padding = '12px 20px'
+      btn.style.cursor = 'pointer'
+      const hide = ()=>{ try{ if(overlay && overlay.parentElement) overlay.parentElement.removeChild(overlay) }catch(e){} }
+      const unlock = ()=>{ try{ if(bgm){ bgm.volume = 0.7; bgm.play().catch(()=>{}) } }catch(e){}; hide() }
+      btn.addEventListener('click', unlock)
+      overlay.appendChild(btn)
+      document.body.appendChild(overlay)
+      try{
+        window.addEventListener('pointerdown', unlock, { once:true })
+        window.addEventListener('click', unlock, { once:true })
+        window.addEventListener('touchstart', unlock, { once:true })
+        window.addEventListener('keydown', unlock, { once:true })
+      }catch(e){}
+    }catch(e){}
   }
 
   function amplifyAudioElement(id, gainValue){
@@ -1623,6 +1688,7 @@
     updateGauges();
 
   try{ if(bgm) bgm.volume = 0.7 }catch(e){}
+    setupUserGestureBgmUnlock()
     playBgmIfNeeded();
 
     try{ preloadAssets(PRELOAD_ASSETS) }catch(e){}

@@ -22,6 +22,54 @@
   let _animating = false
   let _navigating = false
 
+  // BGM 自動再生解錠（iOS Safari 対応）
+  function setupUserGestureBgmUnlock(){
+    try{
+      if(!bgm) return
+      const unlock = ()=>{
+        try{ bgm.volume = 0.6; bgm.play().catch(()=>{}) }catch(e){}
+        try{ window.removeEventListener('pointerdown', unlock) }catch(e){}
+        try{ window.removeEventListener('click', unlock) }catch(e){}
+        try{ window.removeEventListener('touchstart', unlock) }catch(e){}
+        try{ window.removeEventListener('keydown', unlock) }catch(e){}
+      }
+      window.addEventListener('pointerdown', unlock, { once:true })
+      window.addEventListener('click', unlock, { once:true })
+      window.addEventListener('touchstart', unlock, { once:true })
+      window.addEventListener('keydown', unlock, { once:true })
+    }catch(e){}
+  }
+  function showSoundOverlay(){
+    try{
+      if(document.getElementById('audio-unlock')) return
+      const overlay = document.createElement('div')
+      overlay.id = 'audio-unlock'
+      overlay.style.position = 'fixed'
+      overlay.style.left = '0'
+      overlay.style.top = '0'
+      overlay.style.right = '0'
+      overlay.style.bottom = '0'
+      overlay.style.display = 'flex'
+      overlay.style.alignItems = 'center'
+      overlay.style.justifyContent = 'center'
+      overlay.style.background = 'rgba(0,0,0,0.5)'
+      overlay.style.zIndex = '99999'
+      const btn = document.createElement('button')
+      btn.textContent = '音を再生する'
+      btn.style.fontSize = '20px'
+      btn.style.padding = '12px 20px'
+      const hide = ()=>{ try{ if(overlay && overlay.parentElement) overlay.parentElement.removeChild(overlay) }catch(e){} }
+      const unlock = ()=>{ try{ if(bgm){ bgm.volume=0.6; bgm.play().catch(()=>{}) } }catch(e){}; hide() }
+      btn.addEventListener('click', unlock)
+      overlay.appendChild(btn)
+      document.body.appendChild(overlay)
+      try{ window.addEventListener('pointerdown', unlock, { once:true }) }catch(e){}
+      try{ window.addEventListener('click', unlock, { once:true }) }catch(e){}
+      try{ window.addEventListener('touchstart', unlock, { once:true }) }catch(e){}
+      try{ window.addEventListener('keydown', unlock, { once:true }) }catch(e){}
+    }catch(e){}
+  }
+
   function lockButtons(ms){
     try{
       const t = typeof ms === 'number' ? ms : 600
@@ -62,7 +110,17 @@
       if(p && p.catch){ p.catch(()=>{ try{ el.load(); el.play().catch(()=>{}) }catch(e){} }) }
     }catch(e){}
   }
-  function playBgm(){ try{ if(bgm){ bgm.volume = 0.6; bgm.currentTime = 0; bgm.play().catch(()=>{}) } }catch(e){} }
+  function playBgm(){
+    try{
+      if(!bgm) return
+      bgm.volume = 0.6
+      try{ bgm.currentTime = 0 }catch(e){}
+      const p = bgm.play()
+      let ok = false
+      if(p && p.then){ p.then(()=>{ ok = true }).catch(()=>{ showSoundOverlay() }) }
+      setTimeout(()=>{ try{ if(bgm && bgm.paused && !ok) showSoundOverlay() }catch(e){} }, 240)
+    }catch(e){}
+  }
 
   function showImage(i){
     if(_animating) return
@@ -155,8 +213,9 @@
 
   function init(){
 
-    try{ if(screen) requestAnimationFrame(()=> setTimeout(()=> screen.classList.add('visible'), 20)) }catch(e){}
-    playBgm()
+  try{ if(screen) requestAnimationFrame(()=> setTimeout(()=> screen.classList.add('visible'), 20)) }catch(e){}
+  setupUserGestureBgmUnlock();
+  playBgm()
 
     idx = 0
     showImage(idx)
@@ -164,6 +223,7 @@
   try{ if(btnNext) { btnNext._missed_handler = ()=>{ if(_animating || _navigating) return;
 
     try{ const cs = getComputedStyle(document.documentElement); const fin=(cs.getPropertyValue('--me-body-fade-in')||'').trim()||'600ms'; const fout=(cs.getPropertyValue('--me-body-fade-out')||'').trim()||'400ms'; const toMs=(v)=>{ v=String(v).trim(); if(v.endsWith('ms')) return Math.round(parseFloat(v)); if(v.endsWith('s')) return Math.round(parseFloat(v)*1000); const n=parseFloat(v); return Number.isFinite(n)?Math.round(n):0 }; const lockMs=Math.max(800, toMs(fin)+toMs(fout)+80); if(!lockButtons(lockMs)) return; btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, lockMs) }catch(e){ if(!lockButtons(800)) return }
+    try{ if(bgm && bgm.paused){ bgm.volume = 0.6; bgm.play().catch(()=>{}) } }catch(e){}
     playSE(); next() }; btnNext.addEventListener('click', btnNext._missed_handler) } }catch(e){}
   try{ if(btnRestart) { btnRestart._missed_handler = ()=>{ if(_navigating) return; _navigating = true; if(!lockButtons(1000)) return; try{ btnRestart.classList.add('disabled'); btnRestart.setAttribute('aria-disabled','true') }catch(e){} ; playSE(); if(window.transitionAPI && window.transitionAPI.fadeOutNavigate){ window.transitionAPI.fadeOutNavigate('start.html') } else { try{ if(screen) screen.classList.remove('visible') }catch(e){} ;
 

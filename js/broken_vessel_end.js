@@ -23,6 +23,55 @@
   let _animating = false
   let _navigating = false
 
+  // BGM 自動再生解錠（iOS Safari 対応）
+  function setupUserGestureBgmUnlock(){
+    try{
+      const b = bgm || document.getElementById('bgm')
+      if(!b) return
+      const unlock = ()=>{
+        try{ b.volume = 0.6; b.play().catch(()=>{}) }catch(e){}
+        try{ window.removeEventListener('pointerdown', unlock) }catch(e){}
+        try{ window.removeEventListener('click', unlock) }catch(e){}
+        try{ window.removeEventListener('touchstart', unlock) }catch(e){}
+        try{ window.removeEventListener('keydown', unlock) }catch(e){}
+      }
+      window.addEventListener('pointerdown', unlock, { once:true })
+      window.addEventListener('click', unlock, { once:true })
+      window.addEventListener('touchstart', unlock, { once:true })
+      window.addEventListener('keydown', unlock, { once:true })
+    }catch(e){}
+  }
+  function showSoundOverlay(){
+    try{
+      if(document.getElementById('audio-unlock')) return
+      const overlay = document.createElement('div')
+      overlay.id = 'audio-unlock'
+      overlay.style.position = 'fixed'
+      overlay.style.left = '0'
+      overlay.style.top = '0'
+      overlay.style.right = '0'
+      overlay.style.bottom = '0'
+      overlay.style.display = 'flex'
+      overlay.style.alignItems = 'center'
+      overlay.style.justifyContent = 'center'
+      overlay.style.background = 'rgba(0,0,0,0.5)'
+      overlay.style.zIndex = '99999'
+      const btn = document.createElement('button')
+      btn.textContent = '音を再生する'
+      btn.style.fontSize = '20px'
+      btn.style.padding = '12px 20px'
+      const hide = ()=>{ try{ if(overlay && overlay.parentElement) overlay.parentElement.removeChild(overlay) }catch(e){} }
+      const unlock = ()=>{ try{ const b=bgm||document.getElementById('bgm'); if(b){ b.volume=0.6; b.play().catch(()=>{}) } }catch(e){}; hide() }
+      btn.addEventListener('click', unlock)
+      overlay.appendChild(btn)
+      document.body.appendChild(overlay)
+      try{ window.addEventListener('pointerdown', unlock, { once:true }) }catch(e){}
+      try{ window.addEventListener('click', unlock, { once:true }) }catch(e){}
+      try{ window.addEventListener('touchstart', unlock, { once:true }) }catch(e){}
+      try{ window.addEventListener('keydown', unlock, { once:true }) }catch(e){}
+    }catch(e){}
+  }
+
   // ボタンSEの堅牢化（WebAudio + HTMLAudioプール）
   let sePool = null
   let seAudioMode = 'html'
@@ -63,7 +112,16 @@
       if(p && p.catch){ p.catch(()=>{ try{ el.load(); el.play().catch(()=>{}) }catch(e){} }) }
     }catch(e){}
   }
-  function tryPlayBgm(){ if(!bgm) return; bgm.volume = 0.6; bgm.play().catch(()=>{}) }
+  function tryPlayBgm(){
+    try{
+      if(!bgm) return
+      bgm.volume = 0.6
+      const p = bgm.play()
+      let ok = false
+      if(p && p.then){ p.then(()=>{ ok = true }).catch(()=>{ showSoundOverlay() }) }
+      setTimeout(()=>{ try{ if(bgm && bgm.paused && !ok) showSoundOverlay() }catch(e){} }, 240)
+    }catch(e){}
+  }
 
   function readRootMs(varName, fallbackMs){
     try{
@@ -196,7 +254,8 @@
   bodyFadeOutMs = readRootMs('--bv-body-fade-out', bodyFadeOutMs)
   transitionDurationMs = readRootMs('--transition-duration', transitionDurationMs)
 
-    tryPlayBgm()
+  setupUserGestureBgmUnlock()
+  tryPlayBgm()
 
     idx = 0
     showImage(idx)
@@ -206,6 +265,7 @@
       const lockMs = Math.max(800, bodyFadeOutMs + bodyFadeInMs + 80)
       if(!lockButtons(lockMs)) return
       try{ btnNext.classList.add('disabled'); btnNext.setAttribute('aria-disabled','true'); setTimeout(()=>{ try{ btnNext.classList.remove('disabled'); btnNext.removeAttribute('aria-disabled') }catch(e){} }, lockMs) }catch(e){}
+      try{ const b=bgm||document.getElementById('bgm'); if(b && b.paused){ b.volume=0.6; b.play().catch(()=>{}) } }catch(e){}
       try{ if(seAudioCtx && seAudioCtx.state==='suspended'){ seAudioCtx.resume().catch(()=>{}) } }catch(e){}
       playSE(); next()
     }; btnNext.addEventListener('click', btnNext._bve_handler) }
