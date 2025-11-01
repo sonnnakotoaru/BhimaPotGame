@@ -125,13 +125,13 @@
       if(!eyeElem || eyeAnimating) return
       eyeAnimating = true
       const frames = [
-        'assets/character/TRUE/10_duryodhana_true_eye_closed.png',
-        'assets/character/TRUE/09_duryodhana_true_eye_half.png',
-        'assets/character/TRUE/08_duryodhana_true_eye_open_narrow.png',
-        'assets/character/TRUE/07_duryodhana_true_eye_open_clear.png',
-        'assets/character/TRUE/08_duryodhana_true_eye_open_narrow.png',
-        'assets/character/TRUE/09_duryodhana_true_eye_half.png',
-        'assets/character/TRUE/10_duryodhana_true_eye_closed.png'
+  'assets/character/true/10_duryodhana_true_eye_closed.png',
+  'assets/character/true/09_duryodhana_true_eye_half.png',
+  'assets/character/true/08_duryodhana_true_eye_open_narrow.png',
+  'assets/character/true/07_duryodhana_true_eye_open_clear.png',
+  'assets/character/true/08_duryodhana_true_eye_open_narrow.png',
+  'assets/character/true/09_duryodhana_true_eye_half.png',
+  'assets/character/true/10_duryodhana_true_eye_closed.png'
       ]
   const interval = 160 // フレーム間のミリ秒（大きくしてゆっくり目の瞬きにする）
       const prev = eyeElem.src || ''
@@ -160,7 +160,7 @@
       eyeElem = document.getElementById('te-eye')
       if(!eyeElem) return
 
-      try{ eyeElem.src = eyeElem.src || 'assets/character/TRUE/07_duryodhana_true_eye_open_clear.png' }catch(e){}
+  try{ eyeElem.src = eyeElem.src || 'assets/character/true/07_duryodhana_true_eye_open_clear.png' }catch(e){}
       scheduleNextBlink(minDelay, maxDelay)
     }catch(e){}
   }
@@ -173,9 +173,9 @@
       if(!mouthElem || mouthAnimating) return
       mouthAnimating = true
       const frames = [
-        'assets/character/TRUE/12_duryodhana_true_mouth_closed_smile.png',
-        'assets/character/TRUE/11_duryodhana_true_mouth_open_smile.png',
-        'assets/character/TRUE/12_duryodhana_true_mouth_closed_smile.png'
+  'assets/character/true/12_duryodhana_true_mouth_closed_smile.png',
+  'assets/character/true/11_duryodhana_true_mouth_open_smile.png',
+  'assets/character/true/12_duryodhana_true_mouth_closed_smile.png'
       ]
       const interval = 180
       const prev = mouthElem.src || ''
@@ -190,8 +190,8 @@
     try{
       if(!mouthElem || mouthAnimating) return
       mouthAnimating = true
-      const open = 'assets/character/TRUE/11_duryodhana_true_mouth_open_smile.png'
-      const closed = 'assets/character/TRUE/12_duryodhana_true_mouth_closed_smile.png'
+  const open = 'assets/character/true/11_duryodhana_true_mouth_open_smile.png'
+  const closed = 'assets/character/true/12_duryodhana_true_mouth_closed_smile.png'
       const interval = 100 // 速めにパチパチさせる
       const prev = mouthElem.src || closed
       for(let i=0;i<repeats;i++){
@@ -364,7 +364,7 @@
 
           try{ stopMouthLoop() }catch(e){}
           try{ mouthElem = mouthElem || document.getElementById('te-mouth') }catch(e){}
-          try{ if(mouthElem) mouthElem.src = 'assets/character/TRUE/12_duryodhana_true_mouth_closed_smile.png' }catch(e){}
+          try{ if(mouthElem) mouthElem.src = 'assets/character/true/12_duryodhana_true_mouth_closed_smile.png' }catch(e){}
 
           try{
             const fadeMs = readRootMs('--te-body-fade-in', 600)
