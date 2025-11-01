@@ -194,7 +194,9 @@
     buffers: {}, // id -> AudioBuffer
     pools: {},   // id -> [HTMLAudioElement]
     lastPlayAt: {}, // id -> timestamp
-    preferHtml: { 'se-heart': true, 'se-vessel-crack1': true, 'se-vessel-crack3': true },
+    // Safari 安定性のため WebAudio を優先。必要な音量差は per-id の WebAudio ゲインで吸収する
+    preferHtml: {},
+    webGain: { 'se-heart': 1.6, 'se-vessel-crack1': 1.3, 'se-vessel-crack3': 1.3 },
     unlockInstalled: false
   }
   function sfxIsHttp(){ try{ return /^https?:$/i.test(location.protocol) }catch(e){ return false } }
@@ -256,7 +258,13 @@
       const ctx = SFX.ctx
       if(!buf || !ctx || !SFX.gainNode) return false
       if(ctx.state === 'suspended'){ try{ ctx.resume().catch(()=>{}) }catch(e){} }
-      const src = ctx.createBufferSource(); src.buffer = buf; src.connect(SFX.gainNode); src.start(0)
+      const src = ctx.createBufferSource();
+      src.buffer = buf
+      // per-id のゲイン（無ければ1.0）を適用
+      const g = ctx.createGain()
+      try{ g.gain.value = (SFX.webGain && typeof SFX.webGain[id] === 'number') ? SFX.webGain[id] : 1.0 }catch(e){}
+      try{ src.connect(g); g.connect(SFX.gainNode) }catch(e){ try{ src.connect(SFX.gainNode) }catch(_){} }
+      src.start(0)
       return true
     }catch(e){ return false }
   }
@@ -284,7 +292,7 @@
       if(now - last < 140) return
       SFX.lastPlayAt[id] = now
 
-      // アンプで増幅しているSEはHTMLAudio優先（既存の音量バランス維持）
+      // WebAudio を優先（成功しなければ HTMLAudio にフォールバック）
       const preferHtml = !!SFX.preferHtml[id]
       if(!preferHtml && sfxIsHttp()){
         const ok = SFX.buffers[id] ? true : (await sfxDecodeIfNeeded(id))
@@ -1700,6 +1708,8 @@
 
   try{ amplifyAudioElement('se-vessel-crack1', 1.5) }catch(e){}
   try{ amplifyAudioElement('se-vessel-crack3', 1.5) }catch(e){}
+  // 重要SEを事前デコードして Safari での取りこぼしを減らす
+  try{ (async()=>{ try{ await sfxEnsureContext() }catch(e){}; try{ await sfxDecodeIfNeeded('se-heart') }catch(e){}; try{ await sfxDecodeIfNeeded('se-vessel-crack1') }catch(e){}; try{ await sfxDecodeIfNeeded('se-vessel-crack3') }catch(e){} })() }catch(e){}
     startAnims(); try{ if(screen && screen.classList) { requestAnimationFrame(()=> setTimeout(()=> screen.classList.add('visible'), 20)) } }catch(e){}
 
   try{ showPrimaryActionForDay() }catch(e){}
